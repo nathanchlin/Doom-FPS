@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DOOM · FPS · Three.js</title>
+  </head>
+  <body>
+    <div id="game"></div>
+
+    <!-- Crosshair -->
+    <div id="crosshair"></div>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="hud-item hud-left">
+        <div class="label">HEALTH</div>
+        <div class="value" id="hp">100</div>
+      </div>
+      <div class="hud-item hud-right">
+        <div class="label">AMMO</div>
+        <div class="value" id="ammo">30</div>
+      </div>
+      <div class="hud-item hud-center-top">
+        <div class="label">ENEMIES</div>
+        <div class="value" id="enemies">0</div>
+      </div>
+    </div>
+
+    <!-- Damage flash -->
+    <div id="damage"></div>
+
+    <!-- Hit marker -->
+    <div id="hitmarker"></div>
+
+    <!-- Start overlay -->
+    <div id="overlay">
+      <div class="panel">
+        <h1>DOOM <span class="sub">· FPS</span></h1>
+        <p class="tag">Three.js · TypeScript · Vite</p>
+        <div class="controls">
+          <div><kbd>WASD</kbd> move</div>
+          <div><kbd>MOUSE</kbd> look</div>
+          <div><kbd>LMB</kbd> shoot</div>
+          <div><kbd>SPACE</kbd> jump</div>
+          <div><kbd>SHIFT</kbd> sprint</div>
+          <div><kbd>R</kbd> reload / restart</div>
+        </div>
+        <button id="start">CLICK TO PLAY</button>
+        <p class="hint">Pointer will be locked. Press ESC to release.</p>
+      </div>
+    </div>
+
+    <!-- GameOver overlay -->
+    <div id="gameover" class="end-overlay">
+      <div class="panel">
+        <h1 class="lose">YOU DIED</h1>
+        <p class="sub" id="gameover-sub"></p>
+        <button id="gameover-restart">RESTART</button>
+      </div>
+    </div>
+
+    <!-- Victory overlay -->
+    <div id="victory" class="end-overlay">
+      <div class="panel">
+        <h1 class="win">VICTORY</h1>
+        <p class="sub" id="victory-sub"></p>
+        <button id="victory-restart">PLAY AGAIN</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
