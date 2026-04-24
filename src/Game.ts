@@ -1,52 +1,95 @@
-import * as THREE from 'three';
 import { CONFIG } from './config';
 import { Engine } from './Engine';
 import { Input } from './Input';
 import { Level } from './Level';
 import { Player } from './Player';
-import { Enemy } from './Enemy';
 import { Weapon } from './Weapon';
 import { WeaponModel } from './WeaponModel';
 import { Hud } from './Hud';
 import { Sfx } from './Sfx';
+import { generateMaze, type MazeData } from './Maze';
+import { Door } from './Door';
+import { Room } from './Room';
+
+type GameState = 'exploring' | 'in_room' | 'dead';
 
 /**
- * Game — top-level orchestrator. Owns every system and wires them:
- *   - per-frame update order: player → weapon → enemies → hit tests → hud
- *   - handles game state: playing | dead | won
- *   - restart() respawns the player and enemies without touching the engine
+ * Game — top-level orchestrator for maze gameplay.
+ * State machine: exploring (maze) → in_room (combat/treasure/exit) → dead
+ * Manages floor progression, door interactions, room teleportation.
  */
 export class Game {
   readonly engine: Engine;
   readonly input: Input;
-  readonly level: Level;
-  readonly player: Player;
-  readonly weapon: Weapon;
   readonly weaponModel: WeaponModel;
   readonly hud: Hud;
   readonly sfx: Sfx;
-  enemies: Enemy[] = [];
 
-  private state: 'playing' | 'dead' | 'won' = 'playing';
+  private level!: Level;
+  private player!: Player;
+  private weapon!: Weapon;
+  private mazeData!: MazeData;
+  private doors: Door[] = [];
+  private currentRoom: Room | null = null;
+
+  private state: GameState = 'exploring';
+  private floor = 1;
+  private doorsOpened = 0;
+  private totalKills = 0;
+  private elapsedTime = 0;
+  private transitioning = false;
+  private nearDoor: Door | null = null;
 
   constructor(container: HTMLElement) {
     this.engine = new Engine(container);
-    // Camera must be in the scene so weapon model attached to camera renders
     this.engine.scene.add(this.engine.camera);
 
     this.input = new Input(this.engine.renderer.domElement);
-    this.level = new Level(this.engine.scene);
-    this.player = new Player(this.engine.camera, this.input, this.level);
     this.weaponModel = new WeaponModel(this.engine.camera);
     this.sfx = new Sfx();
-    this.weapon = new Weapon(this.player, this.weaponModel, this.sfx);
     this.hud = new Hud();
 
-    this.spawnEnemies();
+    // Initial maze
+    this.initFloor(1);
+
     this.bindActions();
     this.registerUpdaters();
-
     this.refreshHud();
+  }
+
+  private initFloor(floor: number): void {
+    // Clean up old level and doors
+    if (this.level) {
+      this.level.dispose(this.engine.scene);
+    }
+    for (const d of this.doors) d.dispose(this.engine.scene);
+    this.doors = [];
+
+    // Generate maze
+    this.floor = floor;
+    this.mazeData = generateMaze(floor);
+
+    // Build level geometry
+    this.level = new Level(this.engine.scene, this.mazeData);
+
+    // Create or update player
+    if (!this.player) {
+      this.player = new Player(this.engine.camera, this.input, this.level);
+      this.weapon = new Weapon(this.player, this.weaponModel, this.sfx);
+    } else {
+      this.player.setLevel(this.level);
+    }
+
+    // Place player at spawn
+    const spawn = this.level.getPlayerSpawn();
+    this.player.teleportTo(spawn.x, spawn.z);
+
+    // Create doors
+    for (const dp of this.mazeData.doors) {
+      this.doors.push(new Door(dp, this.mazeData.rows, this.mazeData.cols, this.engine.scene));
+    }
+
+    this.doorsOpened = 0;
   }
 
   start(): void {
@@ -54,47 +97,154 @@ export class Game {
     this.engine.start();
   }
 
-  private spawnEnemies(): void {
-    // Clear any existing
-    for (const e of this.enemies) e.dispose(this.engine.scene);
-    this.enemies = [];
-
-    const spawns = this.level.spawnPoints.slice();
-    for (let i = 0; i < CONFIG.enemy.count; i++) {
-      const sp = spawns[i % spawns.length]!;
-      // Jitter slightly so co-located enemies don't overlap
-      const jitter = new THREE.Vector3(
-        (Math.random() - 0.5) * 4,
-        0,
-        (Math.random() - 0.5) * 4,
-      );
-      this.enemies.push(new Enemy(sp.clone().add(jitter), this.engine.scene));
-    }
-  }
-
   private bindActions(): void {
     // Click to shoot
     this.input.onMouseDown.push(() => {
-      if (this.state !== 'playing') return;
-      const hit = this.weapon.tryFire(this.enemies);
+      if (this.state !== 'exploring' && this.state !== 'in_room') return;
+      const enemies = this.state === 'in_room' && this.currentRoom
+        ? this.currentRoom.enemies
+        : [];
+      const hit = this.weapon.tryFire(enemies);
       if (hit) {
         this.hud.flashHitMarker();
         this.sfx.hit();
         if (!hit.enemy.alive) {
           this.sfx.enemyDie();
+          this.totalKills++;
         }
       }
     });
 
-    // R to reload (fills ammo) or restart after game end
-    this.input.registerKey('r', () => {
-      if (this.state !== 'playing') {
-        this.restart();
-      } else {
-        this.player.ammo = CONFIG.player.maxAmmo;
-        this.refreshHud();
+    // E to interact
+    this.input.onInteract.push(() => {
+      if (this.transitioning) return;
+      if (this.state === 'exploring') {
+        this.tryOpenDoor();
+      } else if (this.state === 'in_room') {
+        this.tryRoomInteract();
       }
     });
+
+    // R to reload or restart
+    this.input.registerKey('r', () => {
+      if (this.state === 'dead') {
+        this.restart();
+      } else {
+        this.player.ammo = Math.min(this.player.ammo + CONFIG.player.maxAmmo, CONFIG.player.maxAmmo);
+        this.hud.setAmmo(this.player.ammo);
+      }
+    });
+  }
+
+  private async tryOpenDoor(): Promise<void> {
+    if (!this.nearDoor || this.nearDoor.getState() === 'used') return;
+
+    this.transitioning = true;
+    this.sfx.doorOpen();
+    this.nearDoor.markUsed();
+    this.doorsOpened++;
+    this.hud.setDoors(this.doorsOpened, this.doors.length);
+    this.hud.hideInteract();
+
+    // Save position for return
+    this.player.savePosition();
+
+    // Fade to black
+    await this.hud.fadeIn();
+
+    // Create room
+    const roomType = this.nearDoor.roomType;
+    this.currentRoom = new Room(roomType, this.engine.scene, this.floor);
+
+    // Teleport player into room center
+    this.player.teleportTo(500, 500 + CONFIG.room.size / 2 - 2);
+
+    // Swap collision to room walls
+    // (Player uses level for collision; we need room collision in room)
+    // We handle this by having Room provide its own resolveCircleVsWalls
+
+    this.state = 'in_room';
+
+    if (roomType === 'combat') {
+      this.hud.showRoomStatus(this.currentRoom.getAliveEnemyCount());
+    }
+
+    // Fade from black
+    await this.hud.fadeOut();
+    this.transitioning = false;
+  }
+
+  private async tryRoomInteract(): Promise<void> {
+    if (!this.currentRoom) return;
+
+    const px = this.player.position.x;
+    const pz = this.player.position.z;
+
+    // Check chest interaction
+    if (this.currentRoom.chest && this.currentRoom.chest.isPlayerNear(px, pz) && !this.currentRoom.chest.isOpened()) {
+      const loot = this.currentRoom.chest.open();
+      this.sfx.chestOpen();
+      this.player.ammo = Math.min(this.player.ammo + loot.ammo, CONFIG.player.maxAmmo);
+      this.player.hp = Math.min(this.player.hp + loot.health, CONFIG.player.maxHealth);
+      this.hud.setAmmo(this.player.ammo);
+      this.hud.setHp(this.player.hp);
+      this.hud.hideInteract();
+      return;
+    }
+
+    // Check exit portal
+    if (this.currentRoom.type === 'exit' && this.currentRoom.isNearExitPortal(px, pz)) {
+      await this.advanceFloor();
+      return;
+    }
+
+    // Check return door
+    if (this.currentRoom.isNearReturnDoor(px, pz)) {
+      await this.exitRoom();
+      return;
+    }
+  }
+
+  private async exitRoom(): Promise<void> {
+    this.transitioning = true;
+    await this.hud.fadeIn();
+
+    // Dispose room
+    if (this.currentRoom) {
+      this.currentRoom.dispose(this.engine.scene);
+      this.currentRoom = null;
+    }
+
+    // Restore player to maze position
+    this.player.restorePosition();
+    this.state = 'exploring';
+    this.hud.hideRoomStatus();
+
+    await this.hud.fadeOut();
+    this.transitioning = false;
+  }
+
+  private async advanceFloor(): Promise<void> {
+    this.transitioning = true;
+    this.sfx.floorTransition();
+    await this.hud.fadeIn();
+
+    // Dispose room
+    if (this.currentRoom) {
+      this.currentRoom.dispose(this.engine.scene);
+      this.currentRoom = null;
+    }
+
+    // Generate new floor
+    this.initFloor(this.floor + 1);
+    this.state = 'exploring';
+
+    this.hud.hideRoomStatus();
+    this.refreshHud();
+
+    await this.hud.fadeOut();
+    this.hud.showFloorTransition(this.floor);
+    this.transitioning = false;
   }
 
   private registerUpdaters(): void {
@@ -102,39 +252,106 @@ export class Game {
   }
 
   private update(dt: number): void {
-    if (this.state === 'playing') {
-      this.player.update(dt);
-      this.weapon.update(dt);
+    if (this.state === 'dead') {
       this.weaponModel.update(dt);
+      return;
+    }
 
-      // Enemies + their shots
-      let aliveCount = 0;
-      for (const e of this.enemies) {
-        const { shot } = e.update(dt, this.player, this.level);
-        if (e.alive) aliveCount += 1;
-        if (shot) this.onPlayerHit();
+    this.elapsedTime += dt;
+    this.player.update(dt);
+    this.weapon.update(dt);
+    this.weaponModel.update(dt);
+
+    if (this.state === 'exploring') {
+      this.updateExploring();
+    } else if (this.state === 'in_room') {
+      this.updateInRoom(dt);
+    }
+
+    this.hud.setAmmo(this.player.ammo);
+    this.hud.setHp(this.player.hp);
+  }
+
+  private updateExploring(): void {
+    const px = this.player.position.x;
+    const pz = this.player.position.z;
+
+    // Check door proximity
+    let foundNear: Door | null = null;
+    for (const door of this.doors) {
+      if (door.getState() === 'used') {
+        door.setHighlight(false);
+        continue;
       }
+      const near = door.isPlayerNear(px, pz);
+      door.setHighlight(near);
+      if (near) foundNear = door;
+    }
 
-      this.hud.setEnemies(aliveCount, this.enemies.length);
-      this.hud.setAmmo(this.player.ammo);
-      this.hud.setHp(this.player.hp);
-
-      if (aliveCount === 0) {
-        this.onVictory();
-      }
+    this.nearDoor = foundNear;
+    if (foundNear && !this.transitioning) {
+      this.hud.showInteract('[E] OPEN DOOR');
     } else {
-      // Even when dead, let enemies finish their death animations
-      for (const e of this.enemies) e.update(dt, this.player, this.level);
-      this.weaponModel.update(dt);
+      this.hud.hideInteract();
+    }
+
+    // Resolve player collision against maze walls
+    const resolved = this.level.resolveCircleVsWalls(
+      this.player.position.x,
+      this.player.position.z,
+      CONFIG.player.radius,
+    );
+    this.player.position.x = resolved.x;
+    this.player.position.z = resolved.z;
+  }
+
+  private updateInRoom(dt: number): void {
+    if (!this.currentRoom) return;
+
+    const px = this.player.position.x;
+    const pz = this.player.position.z;
+
+    // Room wall collision
+    const resolved = this.currentRoom.resolveCircleVsWalls(px, pz, CONFIG.player.radius);
+    this.player.position.x = resolved.x;
+    this.player.position.z = resolved.z;
+
+    // Update room (enemies, chest)
+    const result = this.currentRoom.update(dt, this.player);
+
+    // Handle damage
+    if (result.shot) {
+      this.onPlayerHit(result.shotDamage);
+    }
+    if (result.contactHit) {
+      this.onPlayerHit(result.contactDamage);
+    }
+
+    // Update room HUD
+    if (this.currentRoom.type === 'combat') {
+      this.hud.showRoomStatus(this.currentRoom.getAliveEnemyCount());
+    }
+
+    // Interact prompts in room
+    if (!this.transitioning) {
+      if (this.currentRoom.chest && this.currentRoom.chest.isPlayerNear(px, pz) && !this.currentRoom.chest.isOpened()) {
+        this.hud.showInteract('[E] OPEN CHEST');
+      } else if (this.currentRoom.type === 'exit' && this.currentRoom.isNearExitPortal(px, pz)) {
+        this.hud.showInteract('[E] ENTER NEXT FLOOR');
+      } else if (this.currentRoom.isNearReturnDoor(px, pz)) {
+        this.hud.showInteract('[E] RETURN TO MAZE');
+      } else {
+        this.hud.hideInteract();
+      }
     }
   }
 
-  private onPlayerHit(): void {
-    if (this.state !== 'playing') return;
-    const died = this.player.takeDamage(CONFIG.player.damageTakenPerHit);
+  private onPlayerHit(damage: number): void {
+    if (this.state === 'dead') return;
+    const died = this.player.takeDamage(damage);
     this.sfx.damage();
     this.hud.flashDamage();
-    this.refreshHud();
+    this.hud.setHp(this.player.hp);
     if (died) {
       this.onDeath();
     }
@@ -145,37 +362,57 @@ export class Game {
     this.sfx.death();
     this.input.exitPointerLock();
     this.hud.showGameOver(
-      `You killed ${this.enemies.filter((e) => !e.alive).length} / ${this.enemies.length}. Press R or click RESTART.`,
-      () => this.restart(),
-    );
-  }
-
-  private onVictory(): void {
-    this.state = 'won';
-    this.input.exitPointerLock();
-    this.hud.showVictory(
-      `All demons cleared. HP left: ${this.player.hp}. Press R or click RESTART.`,
+      {
+        floor: this.floor,
+        kills: this.totalKills,
+        time: this.elapsedTime,
+        doors: this.doorsOpened,
+      },
       () => this.restart(),
     );
   }
 
   restart(): void {
-    this.player.respawn();
-    this.weapon.reset();
-    this.spawnEnemies();
-    this.state = 'playing';
+    // Dispose current room if any
+    if (this.currentRoom) {
+      this.currentRoom.dispose(this.engine.scene);
+      this.currentRoom = null;
+    }
+
+    // Reset stats
+    this.totalKills = 0;
+    this.elapsedTime = 0;
+
+    // Reset player
+    this.player.hp = CONFIG.player.maxHealth;
+    this.player.ammo = CONFIG.player.maxAmmo;
+    this.player.alive = true;
+
+    // Generate floor 1
+    this.initFloor(1);
+    this.state = 'exploring';
+
     this.hud.hideEndScreens();
+    this.hud.hideRoomStatus();
+    this.hud.hideInteract();
     this.refreshHud();
+    this.hud.showFloorTransition(1);
     this.input.requestPointerLock();
   }
 
   private refreshHud(): void {
     this.hud.setHp(this.player.hp);
     this.hud.setAmmo(this.player.ammo);
-    this.hud.setEnemies(this.enemies.filter((e) => e.alive).length, this.enemies.length);
+    this.hud.setFloor(this.floor);
+    this.hud.setDoors(this.doorsOpened, this.doors.length);
   }
 
   dispose(): void {
+    if (this.currentRoom) {
+      this.currentRoom.dispose(this.engine.scene);
+    }
+    for (const d of this.doors) d.dispose(this.engine.scene);
+    this.level.dispose(this.engine.scene);
     this.input.dispose();
     this.engine.dispose();
   }
