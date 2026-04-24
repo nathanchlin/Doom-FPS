@@ -82,6 +82,17 @@ html, body {
 .hud-left .value { color: var(--hp-color); }
 .hud-right { bottom: 24px; right: 24px; text-align: right; }
 .hud-right .value { color: var(--ammo-color); }
+.hud-top-left {
+  top: 20px; left: 24px;
+  padding: 6px 16px;
+}
+.hud-top-left .value { font-size: 22px; }
+.hud-top-right {
+  top: 20px; right: 24px;
+  padding: 6px 16px;
+  text-align: right;
+}
+.hud-top-right .value { font-size: 18px; }
 .hud-center-top {
   top: 20px; left: 50%;
   transform: translateX(-50%);
@@ -89,6 +100,63 @@ html, body {
   padding: 6px 16px;
 }
 .hud-center-top .value { font-size: 18px; }
+
+/* ============ Interact Prompt ============ */
+
+#interact-prompt {
+  position: fixed;
+  bottom: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  pointer-events: none;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  padding: 10px 24px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 2px solid var(--border);
+  backdrop-filter: blur(3px);
+}
+
+/* ============ Floor Transition ============ */
+
+#floor-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(240, 240, 240, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.floor-text {
+  font-size: 72px;
+  font-weight: bold;
+  letter-spacing: 12px;
+  color: #222222;
+  animation: floorFadeIn 1.5s ease-out forwards;
+}
+@keyframes floorFadeIn {
+  0% { opacity: 0; transform: scale(0.8); }
+  30% { opacity: 1; transform: scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* ============ Fade overlay ============ */
+
+#fade-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: #000000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+#fade-overlay.active { opacity: 1; }
 
 /* ============ Damage flash ============ */
 
@@ -166,7 +234,6 @@ h1 {
 }
 h1 .sub { font-size: 22px; letter-spacing: 4px; opacity: 0.5; }
 h1.lose { color: #222222; }
-h1.win { color: #222222; }
 
 .tag {
   font-size: 12px;
@@ -229,8 +296,26 @@ button:hover {
 .end-overlay .sub {
   font-size: 14px;
   opacity: 0.6;
-  margin: 8px 0 32px;
+  margin: 8px 0 16px;
   letter-spacing: 1px;
+}
+
+.stats {
+  text-align: left;
+  margin: 0 auto 28px;
+  max-width: 280px;
+  font-size: 14px;
+  line-height: 2;
+  letter-spacing: 1px;
+}
+.stats div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #ddd;
+  padding: 2px 0;
+}
+.stats .stat-value {
+  font-weight: bold;
 }
 
 /* Damage shake (applied briefly to #game) */

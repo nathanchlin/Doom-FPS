@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DOOM · FPS · Three.js</title>
+    <title>DOOM · MAZE · Three.js</title>
   </head>
   <body>
     <div id="game"></div>
@@ -22,11 +22,30 @@
         <div class="label">AMMO</div>
         <div class="value" id="ammo">30</div>
       </div>
-      <div class="hud-item hud-center-top">
+      <div class="hud-item hud-top-left">
+        <div class="label">FLOOR</div>
+        <div class="value" id="floor">1</div>
+      </div>
+      <div class="hud-item hud-top-right">
+        <div class="label">DOORS</div>
+        <div class="value" id="doors">0 / 0</div>
+      </div>
+      <div class="hud-item hud-center-top" id="room-status" style="display:none;">
         <div class="label">ENEMIES</div>
-        <div class="value" id="enemies">0</div>
+        <div class="value" id="room-enemies">0</div>
       </div>
     </div>
+
+    <!-- Interact prompt -->
+    <div id="interact-prompt" style="display:none;"></div>
+
+    <!-- Floor transition overlay -->
+    <div id="floor-transition" style="display:none;">
+      <div class="floor-text" id="floor-text">FLOOR 1</div>
+    </div>
+
+    <!-- Fade overlay for room transitions -->
+    <div id="fade-overlay"></div>
 
     <!-- Damage flash -->
     <div id="damage"></div>
@@ -37,7 +56,7 @@
     <!-- Start overlay -->
     <div id="overlay">
       <div class="panel">
-        <h1>DOOM <span class="sub">· FPS</span></h1>
+        <h1>DOOM <span class="sub">· MAZE</span></h1>
         <p class="tag">Three.js · TypeScript · Vite</p>
         <div class="controls">
           <div><kbd>WASD</kbd> move</div>
@@ -45,7 +64,9 @@
           <div><kbd>LMB</kbd> shoot</div>
           <div><kbd>SPACE</kbd> jump</div>
           <div><kbd>SHIFT</kbd> sprint</div>
-          <div><kbd>R</kbd> reload / restart</div>
+          <div><kbd>E</kbd> interact</div>
+          <div><kbd>R</kbd> reload</div>
+          <div><kbd>ESC</kbd> pause</div>
         </div>
         <button id="start">CLICK TO PLAY</button>
         <p class="hint">Pointer will be locked. Press ESC to release.</p>
@@ -57,16 +78,8 @@
       <div class="panel">
         <h1 class="lose">YOU DIED</h1>
         <p class="sub" id="gameover-sub"></p>
+        <div class="stats" id="gameover-stats"></div>
         <button id="gameover-restart">RESTART</button>
-      </div>
-    </div>
-
-    <!-- Victory overlay -->
-    <div id="victory" class="end-overlay">
-      <div class="panel">
-        <h1 class="win">VICTORY</h1>
-        <p class="sub" id="victory-sub"></p>
-        <button id="victory-restart">PLAY AGAIN</button>
       </div>
     </div>
 
