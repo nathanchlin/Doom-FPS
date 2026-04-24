@@ -8,6 +8,10 @@ export interface AABB2D {
   minZ: number; maxZ: number;
 }
 
+export interface CollisionProvider {
+  resolveCircleVsWalls(x: number, z: number, radius: number): { x: number; z: number };
+}
+
 /**
  * Level — builds Three.js geometry from MazeData grid.
  * Renders floor, ceiling, walls with black wireframe outlines.

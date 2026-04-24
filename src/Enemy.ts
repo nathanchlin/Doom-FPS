@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from './config';
 import type { Player } from './Player';
-import type { Level } from './Level';
+import type { CollisionProvider } from './Level';
 
 export type EnemyType = 'standard' | 'rusher' | 'tank';
 export type EnemyState = 'idle' | 'chase' | 'attack' | 'dead';
@@ -184,7 +184,7 @@ export class Enemy {
    * - shot: true if ranged attack hit this frame (standard/tank)
    * - contactHit: true if rusher made contact damage this frame
    */
-  update(dt: number, player: Player, level: Level): { shot: boolean; contactHit: boolean } {
+  update(dt: number, player: Player, collider: CollisionProvider): { shot: boolean; contactHit: boolean } {
     if (!this.alive) {
       if (this.deathTimer > 0) {
         this.deathTimer -= dt;
@@ -227,7 +227,7 @@ export class Enemy {
         toPlayer.normalize();
         const nx = this.position.x + toPlayer.x * this.moveSpeed * dt;
         const nz = this.position.z + toPlayer.z * this.moveSpeed * dt;
-        const resolved = level.resolveCircleVsWalls(nx, nz, CONFIG.enemy.radius * (this.type === 'rusher' ? CONFIG.enemy.types.rusher.scale : this.type === 'tank' ? CONFIG.enemy.types.tank.scale : 1));
+        const resolved = collider.resolveCircleVsWalls(nx, nz, CONFIG.enemy.radius * (this.type === 'rusher' ? CONFIG.enemy.types.rusher.scale : this.type === 'tank' ? CONFIG.enemy.types.tank.scale : 1));
         this.position.x = resolved.x;
         this.position.z = resolved.z;
       }

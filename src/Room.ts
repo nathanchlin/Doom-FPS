@@ -252,7 +252,7 @@ export class Room {
     // Update enemies in combat rooms
     let aliveCount = 0;
     for (const e of this.enemies) {
-      const result = e.update(dt, player, this as unknown as import('./Level').Level);
+      const result = e.update(dt, player, this);
       if (e.alive) aliveCount++;
       if (result.shot) {
         shot = true;
