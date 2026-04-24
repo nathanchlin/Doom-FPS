@@ -27,7 +27,7 @@ export class Player {
   constructor(
     camera: THREE.PerspectiveCamera,
     private readonly input: Input,
-    private readonly level: Level,
+    private level: Level,
   ) {
     this.camera = camera;
     this.attachFlashlight();
@@ -67,6 +67,37 @@ export class Player {
     this.ammo = CONFIG.player.maxAmmo;
     this.alive = true;
     this.syncCamera();
+  }
+
+  private savedPosition = new THREE.Vector3();
+  private savedYaw = 0;
+  private savedPitch = 0;
+
+  /** Save current position for returning from a room */
+  savePosition(): void {
+    this.savedPosition.copy(this.position);
+    this.savedYaw = this.yaw;
+    this.savedPitch = this.pitch;
+  }
+
+  /** Restore saved position (returning from a room) */
+  restorePosition(): void {
+    this.position.copy(this.savedPosition);
+    this.yaw = this.savedYaw;
+    this.pitch = this.savedPitch;
+    this.velocityY.v = 0;
+    this.syncCamera();
+  }
+
+  /** Teleport to a specific position */
+  teleportTo(x: number, z: number): void {
+    this.position.set(x, CONFIG.player.height, z);
+    this.velocityY.v = 0;
+    this.syncCamera();
+  }
+
+  setLevel(level: Level): void {
+    this.level = level;
   }
 
   takeDamage(amount: number): boolean {
