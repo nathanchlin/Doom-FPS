@@ -8,6 +8,7 @@ export class Input {
   private mouseDY = 0;
   private mouseDown = false;
   readonly onMouseDown: Array<() => void> = [];
+  readonly onInteract: Array<() => void> = [];
   readonly onKeyDown = new Map<string, Array<() => void>>();
 
   private locked = false;
@@ -21,6 +22,9 @@ export class Input {
     document.addEventListener('pointerlockchange', this.handlePointerLockChange);
     document.addEventListener('pointerlockerror', () => {
       console.warn('Pointer lock failed');
+    });
+    this.registerKey('e', () => {
+      for (const cb of this.onInteract) cb();
     });
   }
 

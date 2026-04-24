@@ -58,6 +58,44 @@ export class Sfx {
     this.noise(0.12, 600, 0.8);
   }
 
+  doorOpen(): void {
+    if (!this.ready()) return;
+    this.sweep(400, 200, 0.2, 'triangle', 0.4);
+    this.beep(600, 0.08, 'sine', 0.3);
+  }
+
+  chestOpen(): void {
+    if (!this.ready()) return;
+    this.beep(440, 0.1, 'sine', 0.5);
+    this.beep(660, 0.1, 'sine', 0.4);
+    this.beep(880, 0.15, 'sine', 0.3);
+  }
+
+  floorTransition(): void {
+    if (!this.ready()) return;
+    this.sweep(200, 800, 0.5, 'sine', 0.5);
+    this.beep(440, 0.3, 'triangle', 0.3);
+  }
+
+  doorOpen(): void {
+    if (!this.ready()) return;
+    this.sweep(400, 200, 0.2, 'triangle', 0.4);
+    this.beep(600, 0.08, 'sine', 0.3);
+  }
+
+  chestOpen(): void {
+    if (!this.ready()) return;
+    this.beep(440, 0.1, 'sine', 0.5);
+    this.beep(660, 0.1, 'sine', 0.4);
+    this.beep(880, 0.15, 'sine', 0.3);
+  }
+
+  floorTransition(): void {
+    if (!this.ready()) return;
+    this.sweep(200, 800, 0.5, 'sine', 0.5);
+    this.beep(440, 0.3, 'triangle', 0.3);
+  }
+
   // --- primitives --------------------------------------------------------
 
   private beep(freq: number, duration: number, type: OscType, vol = 1): void {
