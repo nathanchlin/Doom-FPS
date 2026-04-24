@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from './config';
 import type { Input } from './Input';
-import type { Level } from './Level';
+import type { CollisionProvider } from './Level';
 
 /**
  * First-person player controller with pointer-lock look, WASD movement,
@@ -27,7 +27,7 @@ export class Player {
   constructor(
     camera: THREE.PerspectiveCamera,
     private readonly input: Input,
-    private level: Level,
+    private level: CollisionProvider,
   ) {
     this.camera = camera;
     this.attachFlashlight();
@@ -96,7 +96,7 @@ export class Player {
     this.syncCamera();
   }
 
-  setLevel(level: Level): void {
+  setLevel(level: CollisionProvider): void {
     this.level = level;
   }
 

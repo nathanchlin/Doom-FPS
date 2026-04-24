@@ -156,12 +156,11 @@ export class Game {
     const roomType = this.nearDoor.roomType;
     this.currentRoom = new Room(roomType, this.engine.scene, this.floor);
 
+    // Swap player collision to room walls
+    this.player.setLevel(this.currentRoom);
+
     // Teleport player into room center
     this.player.teleportTo(500, 500 + CONFIG.room.size / 2 - 2);
-
-    // Swap collision to room walls
-    // (Player uses level for collision; we need room collision in room)
-    // We handle this by having Room provide its own resolveCircleVsWalls
 
     this.state = 'in_room';
 
@@ -215,7 +214,8 @@ export class Game {
       this.currentRoom = null;
     }
 
-    // Restore player to maze position
+    // Restore player to maze position and collision
+    this.player.setLevel(this.level);
     this.player.restorePosition();
     this.state = 'exploring';
     this.hud.hideRoomStatus();
