@@ -1,145 +1,127 @@
 import * as THREE from 'three';
 import { CONFIG } from './config';
+import type { MazeData } from './Maze';
+import { DIR, cellToWorld } from './Maze';
 
-/**
- * Axis-aligned bounding box in XZ plane (Y ignored for wall collisions).
- * Used for cheap player/enemy vs wall collision.
- */
 export interface AABB2D {
   minX: number; maxX: number;
   minZ: number; maxZ: number;
 }
 
 /**
- * Level — procedurally builds a Doom-ish arena with corridors, rooms and
- * tinted colored lights. Produces a list of axis-aligned wall boxes that the
- * player/enemy can test against for collision.
+ * Level — builds Three.js geometry from MazeData grid.
+ * Renders floor, ceiling, walls with black wireframe outlines.
+ * Provides wall collision via AABB list.
  */
 export class Level {
   readonly group = new THREE.Group();
   readonly walls: AABB2D[] = [];
-  readonly spawnPoints: THREE.Vector3[] = [];
+  private playerSpawn = new THREE.Vector3(0, CONFIG.player.height, 0);
 
-  constructor(scene: THREE.Scene) {
-    this.buildFloor();
-    this.buildCeiling();
-    this.buildOuterWalls();
-    this.buildInnerStructures();
-    this.buildLights();
-    this.buildDecorations();
+  constructor(scene: THREE.Scene, mazeData: MazeData) {
+    this.buildFromMaze(mazeData);
+    this.buildLights(mazeData);
     scene.add(this.group);
   }
 
-  private buildFloor(): void {
-    const size = CONFIG.world.size;
-    const gridDiv = 30; // number of grid cells per side
-    const geo = new THREE.PlaneGeometry(size, size, 1, 1);
-    const mat = new THREE.MeshStandardMaterial({
+  getPlayerSpawn(): THREE.Vector3 {
+    return this.playerSpawn.clone();
+  }
+
+  private buildFromMaze(maze: MazeData): void {
+    const cs = CONFIG.maze.cellSize;
+    const wt = CONFIG.maze.wallThickness;
+    const wh = CONFIG.world.wallHeight;
+    const totalW = maze.cols * cs;
+    const totalD = maze.rows * cs;
+    const halfW = totalW / 2;
+    const halfD = totalD / 2;
+
+    // Floor
+    const floorGeo = new THREE.PlaneGeometry(totalW + wt * 2, totalD + wt * 2);
+    const floorMat = new THREE.MeshStandardMaterial({
       color: CONFIG.colors.floor,
       roughness: 0.6,
       metalness: 0.0,
     });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.receiveShadow = true;
-    this.group.add(mesh);
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    this.group.add(floor);
 
-    // Black grid lines on white floor
+    // Grid lines on floor
     const lineMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
-    const cellSize = size / gridDiv;
-    const lineWidth = 0.04;
-    // Horizontal lines (along X)
+    const gridDiv = maze.cols;
+    const cellW = totalW / gridDiv;
     for (let i = 0; i <= gridDiv; i++) {
-      const z = -size / 2 + i * cellSize;
-      const line = new THREE.Mesh(
-        new THREE.PlaneGeometry(size, lineWidth),
-        lineMat,
-      );
+      const z = -halfD + i * cellW;
+      const line = new THREE.Mesh(new THREE.PlaneGeometry(totalW, 0.04), lineMat);
       line.rotation.x = -Math.PI / 2;
       line.position.set(0, 0.002, z);
       this.group.add(line);
     }
-    // Vertical lines (along Z)
-    for (let i = 0; i <= gridDiv; i++) {
-      const x = -size / 2 + i * cellSize;
-      const line = new THREE.Mesh(
-        new THREE.PlaneGeometry(lineWidth, size),
-        lineMat,
-      );
+    for (let i = 0; i <= maze.cols; i++) {
+      const x = -halfW + i * cellW;
+      const line = new THREE.Mesh(new THREE.PlaneGeometry(0.04, totalD), lineMat);
       line.rotation.x = -Math.PI / 2;
       line.position.set(x, 0.002, 0);
       this.group.add(line);
     }
-  }
 
-  private buildCeiling(): void {
-    const size = CONFIG.world.size;
-    const geo = new THREE.PlaneGeometry(size, size);
-    const mat = new THREE.MeshStandardMaterial({
+    // Ceiling
+    const ceilGeo = new THREE.PlaneGeometry(totalW + wt * 2, totalD + wt * 2);
+    const ceilMat = new THREE.MeshStandardMaterial({
       color: CONFIG.colors.ceiling,
       roughness: 0.5,
       metalness: 0.0,
     });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.rotation.x = Math.PI / 2;
-    mesh.position.y = CONFIG.world.wallHeight;
-    this.group.add(mesh);
-  }
+    const ceil = new THREE.Mesh(ceilGeo, ceilMat);
+    ceil.rotation.x = Math.PI / 2;
+    ceil.position.y = wh;
+    this.group.add(ceil);
 
-  private buildOuterWalls(): void {
-    const s = CONFIG.world.size / 2;
-    const h = CONFIG.world.wallHeight;
-    const t = 0.5; // thickness
+    // Build walls from maze grid
+    // For each cell, check each direction; if wall is NOT carved, add a wall segment
+    for (let r = 0; r < maze.rows; r++) {
+      for (let c = 0; c < maze.cols; c++) {
+        const open = maze.grid[r]![c]!;
+        const cx = -halfW + c * cs;
+        const cz = -halfD + r * cs;
 
-    // Four outer walls as thin boxes
-    this.addWallBox(-s - t / 2, 0, -s, s, h, t, CONFIG.colors.wall);   // north
-    this.addWallBox(-s - t / 2, 0, s, s, h, t, CONFIG.colors.wall);    // south
-    this.addWallBox(-s - t / 2, 0, -s, t, h, s * 2, CONFIG.colors.wall); // west (oops width order)
-    this.addWallBox(s - t / 2, 0, -s, t, h, s * 2, CONFIG.colors.wall);  // east
-  }
-
-  private buildInnerStructures(): void {
-    // A few pillars and low walls to make it feel like a level instead of a box.
-    const color = CONFIG.colors.wallAccent;
-    const h = CONFIG.world.wallHeight;
-
-    // Four corner pillars (2x2x h)
-    for (const [x, z] of [[-18, -18], [18, -18], [-18, 18], [18, 18]] as const) {
-      this.addWallBox(x - 1, 0, z - 1, 2, h, 2, color, 0.4);
+        // North wall (top of cell, z = cz)
+        if (!(open & DIR.N)) {
+          this.addWallBox(cx, 0, cz - wt / 2, cs, wh, wt);
+        }
+        // West wall (left of cell, x = cx)
+        if (!(open & DIR.W)) {
+          this.addWallBox(cx - wt / 2, 0, cz, wt, wh, cs);
+        }
+      }
     }
 
-    // Two inner walls forming a partial corridor
-    this.addWallBox(-4, 0, -10, 8, h * 0.75, 0.6, color);
-    this.addWallBox(-4, 0, 10 - 0.6, 8, h * 0.75, 0.6, color);
+    // Eastern boundary (rightmost column, east walls)
+    for (let r = 0; r < maze.rows; r++) {
+      const cx = -halfW + maze.cols * cs;
+      const cz = -halfD + r * cs;
+      this.addWallBox(cx - wt / 2, 0, cz, wt, wh, cs);
+    }
 
-    // A chest-high barrier
-    this.addWallBox(-15, 0, -2, 0.6, 1.5, 6, color);
-    this.addWallBox(14.4, 0, -4, 0.6, 1.5, 8, color);
+    // Southern boundary (bottom row, south walls)
+    for (let c = 0; c < maze.cols; c++) {
+      const cx = -halfW + c * cs;
+      const cz = -halfD + maze.rows * cs;
+      this.addWallBox(cx, 0, cz - wt / 2, cs, wh, wt);
+    }
 
-    // Spawn points scattered around edges
-    this.spawnPoints.push(
-      new THREE.Vector3(-22, 0, -22),
-      new THREE.Vector3(22, 0, -22),
-      new THREE.Vector3(-22, 0, 22),
-      new THREE.Vector3(22, 0, 22),
-      new THREE.Vector3(0, 0, -22),
-      new THREE.Vector3(0, 0, 22),
-    );
+    // Player spawn: center of cell (0,0) — top-left of maze
+    const spawn = cellToWorld(0, 0, maze.rows, maze.cols);
+    this.playerSpawn.set(spawn.x, CONFIG.player.height, spawn.z);
   }
 
-  /**
-   * Add a single box-shaped wall segment at (x, y, z) sized (w, h, d).
-   * Registers its XZ footprint in `this.walls`.
-   */
-  private addWallBox(
-    x: number, y: number, z: number,
-    w: number, h: number, d: number,
-    color: number,
-    _emissiveStrength = 0,
-  ): void {
+  private addWallBox(x: number, y: number, z: number, w: number, h: number, d: number): void {
     const geo = new THREE.BoxGeometry(w, h, d);
     const mat = new THREE.MeshStandardMaterial({
-      color,
+      color: CONFIG.colors.wall,
       roughness: 0.5,
       metalness: 0.0,
     });
@@ -151,8 +133,8 @@ export class Level {
 
     // Black wireframe outline
     const edges = new THREE.EdgesGeometry(geo);
-    const lineMat = new THREE.LineBasicMaterial({ color: 0x222222 });
-    const wireframe = new THREE.LineSegments(edges, lineMat);
+    const edgeMat = new THREE.LineBasicMaterial({ color: 0x222222 });
+    const wireframe = new THREE.LineSegments(edges, edgeMat);
     wireframe.position.copy(mesh.position);
     this.group.add(wireframe);
 
@@ -162,87 +144,47 @@ export class Level {
     });
   }
 
-  private buildLights(): void {
-    // Strong ambient — bright, clean scene
-    this.group.add(new THREE.AmbientLight(0xffffff, 2.5));
+  private buildLights(maze: MazeData): void {
+    const cs = CONFIG.maze.cellSize;
+    const totalW = maze.cols * cs;
+    const totalD = maze.rows * cs;
 
-    // Hemisphere for uniform fill
-    this.group.add(new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 1.5));
+    // Ambient
+    this.group.add(new THREE.AmbientLight(0xffffff, 2.0));
 
-    // Top-down directional "sunlight" — main fill
-    const sun = new THREE.DirectionalLight(0xffffff, 2.0);
-    sun.position.set(10, 25, 10);
-    sun.target.position.set(0, 0, 0);
+    // Hemisphere
+    this.group.add(new THREE.HemisphereLight(0xffffff, 0xe0e0e0, 1.2));
+
+    // Directional sun
+    const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+    sun.position.set(totalW / 4, 25, totalD / 4);
     sun.castShadow = true;
-    sun.shadow.camera.left = -35;
-    sun.shadow.camera.right = 35;
-    sun.shadow.camera.top = 35;
-    sun.shadow.camera.bottom = -35;
+    const halfExtent = Math.max(totalW, totalD) / 2;
+    sun.shadow.camera.left = -halfExtent;
+    sun.shadow.camera.right = halfExtent;
+    sun.shadow.camera.top = halfExtent;
+    sun.shadow.camera.bottom = -halfExtent;
     sun.shadow.camera.near = 0.5;
     sun.shadow.camera.far = 60;
     sun.shadow.mapSize.set(1024, 1024);
     this.group.add(sun);
     this.group.add(sun.target);
 
-    // Second directional from opposite side for fill
-    const fill = new THREE.DirectionalLight(0xffffff, 1.0);
-    fill.position.set(-10, 20, -10);
-    this.group.add(fill);
-
-    // Soft point lights at corners for even coverage
-    const cornerIntensity = 3.0;
-    const cornerDist = 60;
-    for (const [x, z] of [[-22, -22], [22, -22], [-22, 22], [22, 22]] as const) {
-      const p = new THREE.PointLight(0xffffff, cornerIntensity, cornerDist, 1.0);
-      p.position.set(x, 4.0, z);
-      this.group.add(p);
+    // Point lights distributed through the maze
+    const spacing = 3; // every 3 cells
+    for (let r = 0; r < maze.rows; r += spacing) {
+      for (let c = 0; c < maze.cols; c += spacing) {
+        const pos = cellToWorld(r, c, maze.rows, maze.cols);
+        const p = new THREE.PointLight(0xffffff, 2.0, cs * spacing * 1.5, 1.0);
+        p.position.set(pos.x, CONFIG.world.wallHeight - 0.5, pos.z);
+        this.group.add(p);
+      }
     }
   }
 
-  private buildDecorations(): void {
-    // Tall accent pillars with black outline
-    const tubeMat = new THREE.MeshStandardMaterial({
-      color: 0xdddddd,
-      roughness: 0.4,
-      metalness: 0.0,
-    });
-    for (const x of [-20, 20]) {
-      const tubeGeo = new THREE.BoxGeometry(0.3, CONFIG.world.wallHeight * 0.7, 0.3);
-      const tube = new THREE.Mesh(tubeGeo, tubeMat);
-      tube.position.set(x, CONFIG.world.wallHeight / 2, 0);
-      tube.castShadow = true;
-      this.group.add(tube);
-      // Outline
-      const edges = new THREE.EdgesGeometry(tubeGeo);
-      const lineMat = new THREE.LineBasicMaterial({ color: 0x222222 });
-      const wireframe = new THREE.LineSegments(edges, lineMat);
-      wireframe.position.copy(tube.position);
-      this.group.add(wireframe);
-    }
-
-    // Center ring on the floor
-    const ringGeo = new THREE.RingGeometry(1.8, 2.2, 32);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0x333333,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.5,
-    });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.01;
-    this.group.add(ring);
-  }
-
-  /**
-   * Check if a point (in XZ) penetrates any wall, returning the resolved
-   * position (nudged out along the shortest axis). Radius is the circle
-   * radius around the point to keep clear of walls.
-   */
   resolveCircleVsWalls(x: number, z: number, radius: number): { x: number; z: number } {
     let rx = x, rz = z;
     for (const w of this.walls) {
-      // closest point on box to the circle center
       const cx = Math.max(w.minX, Math.min(rx, w.maxX));
       const cz = Math.max(w.minZ, Math.min(rz, w.maxZ));
       const dx = rx - cx;
@@ -254,7 +196,6 @@ export class Level {
         rx += (dx / dist) * push;
         rz += (dz / dist) * push;
       } else if (distSq === 0) {
-        // inside the box — push toward nearest edge
         const edges = [
           { axis: 'x' as const, sign: -1, dist: rx - w.minX },
           { axis: 'x' as const, sign: 1, dist: w.maxX - rx },
@@ -268,5 +209,19 @@ export class Level {
       }
     }
     return { x: rx, z: rz };
+  }
+
+  dispose(scene: THREE.Scene): void {
+    scene.remove(this.group);
+    this.group.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry.dispose();
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((m) => m.dispose());
+        } else {
+          obj.material.dispose();
+        }
+      }
+    });
   }
 }
