@@ -41,6 +41,21 @@ export class Level {
     const halfW = totalW / 2;
     const halfD = totalD / 2;
 
+    // Build a door lookup: normalize each door to the canonical wall key
+    // Level builds: North wall as "N:r:c", West wall as "W:r:c"
+    // Door on cell (r,c) facing S → that's the North wall of cell (r+1,c) → "N:{r+1}:c"
+    // Door on cell (r,c) facing E → that's the West wall of cell (r,c+1) → "W:r:{c+1}"
+    const doorWalls = new Set<string>();
+    for (const door of maze.doors) {
+      const { cellRow: r, cellCol: c, wallDir } = door;
+      if (wallDir === DIR.N) doorWalls.add(`N:${r}:${c}`);
+      else if (wallDir === DIR.S) doorWalls.add(`N:${r + 1}:${c}`);
+      else if (wallDir === DIR.W) doorWalls.add(`W:${r}:${c}`);
+      else if (wallDir === DIR.E) doorWalls.add(`W:${r}:${c + 1}`);
+    }
+
+    const doorW = CONFIG.door.width;
+
     // Floor
     const floorGeo = new THREE.PlaneGeometry(totalW + wt * 2, totalD + wt * 2);
     const floorMat = new THREE.MeshStandardMaterial({
@@ -86,19 +101,37 @@ export class Level {
 
     // Build walls from maze grid
     // For each cell, check each direction; if wall is NOT carved, add a wall segment
+    // If a door is on that wall, split into two pieces with a gap
     for (let r = 0; r < maze.rows; r++) {
       for (let c = 0; c < maze.cols; c++) {
         const open = maze.grid[r]![c]!;
         const cx = -halfW + c * cs;
         const cz = -halfD + r * cs;
 
-        // North wall (top of cell, z = cz)
+        // North wall (horizontal, along X axis, at z = cz)
         if (!(open & DIR.N)) {
-          this.addWallBox(cx, 0, cz - wt / 2, cs, wh, wt);
+          if (doorWalls.has(`N:${r}:${c}`)) {
+            // Split: two pieces flanking the door opening
+            const sideLen = (cs - doorW) / 2;
+            if (sideLen > 0.01) {
+              this.addWallBox(cx, 0, cz - wt / 2, sideLen, wh, wt);
+              this.addWallBox(cx + cs - sideLen, 0, cz - wt / 2, sideLen, wh, wt);
+            }
+          } else {
+            this.addWallBox(cx, 0, cz - wt / 2, cs, wh, wt);
+          }
         }
-        // West wall (left of cell, x = cx)
+        // West wall (vertical, along Z axis, at x = cx)
         if (!(open & DIR.W)) {
-          this.addWallBox(cx - wt / 2, 0, cz, wt, wh, cs);
+          if (doorWalls.has(`W:${r}:${c}`)) {
+            const sideLen = (cs - doorW) / 2;
+            if (sideLen > 0.01) {
+              this.addWallBox(cx - wt / 2, 0, cz, wt, wh, sideLen);
+              this.addWallBox(cx - wt / 2, 0, cz + cs - sideLen, wt, wh, sideLen);
+            }
+          } else {
+            this.addWallBox(cx - wt / 2, 0, cz, wt, wh, cs);
+          }
         }
       }
     }
