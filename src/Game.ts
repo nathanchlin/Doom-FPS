@@ -107,7 +107,7 @@ export class Game {
 
     this.net.on('welcome', (msg) => {
       this.myId = msg.playerId;
-      this.lobbyUI!.show(this.myId);
+      this.lobbyUI!.show(this.myId, wsUrl);
     });
 
     this.net.on('lobby_state', (msg) => {

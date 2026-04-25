@@ -6,8 +6,7 @@ import { networkInterfaces } from 'node:os';
 import { WebSocketServer } from 'ws';
 import { GameServer } from './GameServer';
 
-const HTTP_PORT = 3000;
-const WS_PORT = 3001;
+const PORT = 3000;
 
 // ─── Resolve dist directory ───
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -47,24 +46,23 @@ const httpServer = createServer((req, res) => {
   res.end(content);
 });
 
-httpServer.listen(HTTP_PORT, '0.0.0.0', () => {
-  const nets = getLocalIPs();
-  console.log(`\n  🎮 Doom FPS Server`);
-  console.log(`  ─────────────────────────────────`);
-  console.log(`  HTTP: http://localhost:${HTTP_PORT}`);
-  for (const ip of nets) {
-    console.log(`  LAN:  http://${ip}:${HTTP_PORT}`);
-  }
-  console.log(`  WS:   ws://0.0.0.0:${WS_PORT}`);
-  console.log(`  ─────────────────────────────────\n`);
-});
-
-// ─── WebSocket game server ───
-const wss = new WebSocketServer({ port: WS_PORT });
+// ─── WebSocket on same port (HTTP Upgrade) ───
+const wss = new WebSocketServer({ server: httpServer });
 const gameServer = new GameServer();
 
 wss.on('connection', (ws) => {
   gameServer.onConnection(ws);
+});
+
+httpServer.listen(PORT, '0.0.0.0', () => {
+  const nets = getLocalIPs();
+  console.log(`\n  🎮 Doom FPS Server`);
+  console.log(`  ─────────────────────────────────`);
+  console.log(`  http://localhost:${PORT}`);
+  for (const ip of nets) {
+    console.log(`  http://${ip}:${PORT}`);
+  }
+  console.log(`  ─────────────────────────────────\n`);
 });
 
 // ─── Utility: get local network IPs ───

@@ -38,9 +38,9 @@ document.getElementById('btn-create-room')!.addEventListener('click', async () =
   const name = (document.getElementById('player-name') as HTMLInputElement).value || 'Player';
   modeSelect.style.display = 'none';
   try {
-    await game.startMultiplayer('ws://localhost:3001', name);
+    await game.startMultiplayer('ws://localhost:3000', name);
   } catch {
-    alert('无法连接到服务器。请确保已运行 pnpm host');
+    alert('无法连接到服务器。请确保已运行服务器程序');
     modeSelect.style.display = 'flex';
   }
 });
@@ -55,9 +55,9 @@ document.getElementById('btn-join-room')!.addEventListener('click', async () => 
   }
   modeSelect.style.display = 'none';
   try {
-    await game.startMultiplayer(`ws://${ip}:3001`, name);
+    await game.startMultiplayer(`ws://${ip}:3000`, name);
   } catch {
-    alert(`无法连接到 ${ip}:3001`);
+    alert(`无法连接到 ${ip}:3000`);
     modeSelect.style.display = 'flex';
   }
 });
