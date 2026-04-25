@@ -30,6 +30,14 @@
         <div class="label">DOORS</div>
         <div class="value" id="doors">0 / 0</div>
       </div>
+      <div class="hud-item hud-weapon">
+        <div class="label">WEAPON</div>
+        <div class="value" id="weapon-name">RIFLE</div>
+      </div>
+      <div class="hud-item hud-shield" id="shield-indicator" style="display:none;">
+        <div class="label">SHIELD</div>
+        <div class="value" id="shield-hits">3</div>
+      </div>
       <div class="hud-item hud-center-top" id="room-status" style="display:none;">
         <div class="label">ENEMIES</div>
         <div class="value" id="room-enemies">0</div>
@@ -46,6 +54,12 @@
 
     <!-- Fade overlay for room transitions -->
     <div id="fade-overlay"></div>
+
+    <!-- Card picker overlay -->
+    <div id="card-picker" style="display:none;">
+      <div class="card-picker-title">CHOOSE A CARD</div>
+      <div id="card-container" class="card-container"></div>
+    </div>
 
     <!-- Damage flash -->
     <div id="damage"></div>

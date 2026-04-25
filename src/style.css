@@ -326,3 +326,86 @@ button:hover {
   75% { transform: translate(-2px, -4px); }
 }
 #game.shake { animation: shake 0.15s; }
+
+/* ============ Card Picker ============ */
+
+#card-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  background: rgba(240, 240, 240, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  cursor: default;
+}
+.card-picker-title {
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 8px;
+  margin-bottom: 40px;
+  opacity: 0.6;
+}
+.card-container {
+  display: flex;
+  gap: 24px;
+}
+.card {
+  background: var(--panel-bg);
+  border: 3px solid var(--border);
+  padding: 32px 28px;
+  width: 200px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.card:hover {
+  transform: translateY(-6px);
+  border-color: #000000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.card-category {
+  font-size: 11px;
+  letter-spacing: 3px;
+  opacity: 0.4;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+.card-desc {
+  font-size: 12px;
+  line-height: 1.6;
+  opacity: 0.7;
+  letter-spacing: 0.5px;
+}
+.card-selected {
+  background: #222222;
+  color: #ffffff;
+  transform: translateY(-6px) scale(1.05);
+}
+
+/* ============ Weapon & Shield HUD ============ */
+
+.hud-weapon {
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 16px;
+  text-align: center;
+}
+.hud-weapon .value { font-size: 16px; }
+.hud-shield {
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  text-align: center;
+  border-color: #4488ff;
+}
+.hud-shield .value { font-size: 16px; color: #4488ff; }
