@@ -7,11 +7,14 @@ import { Weapon } from './Weapon';
 import { WeaponModel } from './WeaponModel';
 import { Hud } from './Hud';
 import { Sfx } from './Sfx';
-import { generateMaze, type MazeData } from './Maze';
+import { generateMaze, cellToWorld, findCorridorCells, type MazeData } from './Maze';
 import { Door } from './Door';
 import { Room } from './Room';
 import { drawCards, showCardPicker, type Card, type WeaponCard, type StatCard, type SpecialCard } from './CardPicker';
 import type { WeaponType } from './weapons';
+import { Enemy } from './Enemy';
+import { Hazard } from './Hazard';
+import * as THREE from 'three';
 
 type GameState = 'exploring' | 'in_room' | 'dead';
 
@@ -32,6 +35,8 @@ export class Game {
   private weapon!: Weapon;
   private mazeData!: MazeData;
   private doors: Door[] = [];
+  private corridorEnemies: Enemy[] = [];
+  private hazards: Hazard[] = [];
   private currentRoom: Room | null = null;
 
   private state: GameState = 'exploring';
@@ -105,6 +110,32 @@ export class Game {
     }
 
     this.doorsOpened = 0;
+
+    // Spawn corridor patrol enemies
+    for (const e of this.corridorEnemies) e.dispose(this.engine.scene);
+    this.corridorEnemies = [];
+
+    const corridorCells = findCorridorCells(this.mazeData.grid, this.mazeData.rows, this.mazeData.cols);
+    const shuffledCorridors = corridorCells.sort(() => Math.random() - 0.5);
+
+    const enemyCount = Math.min(2 + floor, 8, shuffledCorridors.length);
+    for (let i = 0; i < enemyCount; i++) {
+      const cell = shuffledCorridors[i]!;
+      const pos = cellToWorld(cell.row, cell.col, this.mazeData.rows, this.mazeData.cols);
+      const spawn = new THREE.Vector3(pos.x, 0, pos.z);
+      this.corridorEnemies.push(new Enemy(spawn, this.engine.scene, 'patrol', floor));
+    }
+
+    // Spawn floor hazards
+    for (const h of this.hazards) h.dispose(this.engine.scene);
+    this.hazards = [];
+
+    const hazardCount = Math.min(CONFIG.hazard.baseCount + floor, CONFIG.hazard.maxCount, shuffledCorridors.length - enemyCount);
+    for (let i = 0; i < hazardCount; i++) {
+      const cell = shuffledCorridors[enemyCount + i]!;
+      const pos = cellToWorld(cell.row, cell.col, this.mazeData.rows, this.mazeData.cols);
+      this.hazards.push(new Hazard(pos.x, pos.z, this.engine.scene));
+    }
   }
 
   start(): void {
@@ -118,7 +149,7 @@ export class Game {
       if (this.state !== 'exploring' && this.state !== 'in_room') return;
       const enemies = this.state === 'in_room' && this.currentRoom
         ? this.currentRoom.enemies
-        : [];
+        : this.corridorEnemies;
       const hit = this.weapon.tryFire(enemies);
       if (hit) {
         this.hud.flashHitMarker();
@@ -373,7 +404,7 @@ export class Game {
     this.weaponModel.update(dt);
 
     if (this.state === 'exploring') {
-      this.updateExploring();
+      this.updateExploring(dt);
     } else if (this.state === 'in_room') {
       this.updateInRoom(dt);
     }
@@ -382,7 +413,7 @@ export class Game {
     this.hud.setHp(this.player.hp);
   }
 
-  private updateExploring(): void {
+  private updateExploring(dt: number): void {
     const px = this.player.position.x;
     const pz = this.player.position.z;
 
@@ -403,6 +434,24 @@ export class Game {
       this.hud.showInteract('[E] 开门');
     } else {
       this.hud.hideInteract();
+    }
+
+    // Update corridor enemies
+    for (const e of this.corridorEnemies) {
+      const result = e.update(dt, this.player, this.level);
+      if (result.shot) {
+        this.onPlayerHit(e.getDamage());
+      }
+      if (result.contactHit) {
+        this.onPlayerHit(e.getDamage());
+      }
+    }
+
+    // Check floor hazards
+    for (const hz of this.hazards) {
+      if (hz.isInside(px, pz)) {
+        this.onPlayerHit(hz.damagePerSecond * dt);
+      }
     }
 
     // Resolve player collision against maze walls
@@ -545,6 +594,8 @@ export class Game {
       this.currentRoom.dispose(this.engine.scene);
     }
     for (const d of this.doors) d.dispose(this.engine.scene);
+    for (const e of this.corridorEnemies) e.dispose(this.engine.scene);
+    for (const h of this.hazards) h.dispose(this.engine.scene);
     this.level.dispose(this.engine.scene);
     this.input.dispose();
     this.engine.dispose();

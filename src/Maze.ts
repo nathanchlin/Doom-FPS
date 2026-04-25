@@ -134,6 +134,21 @@ function getUnvisitedNeighbors(
   return result;
 }
 
+/** Find corridor cells (2+ open passages, excluding spawn cell 0,0) */
+export function findCorridorCells(grid: number[][], rows: number, cols: number): Array<{ row: number; col: number }> {
+  const result: Array<{ row: number; col: number }> = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (r === 0 && c === 0) continue; // skip spawn
+      const openCount = bitCount(grid[r][c]!);
+      if (openCount >= 2) {
+        result.push({ row: r, col: c });
+      }
+    }
+  }
+  return result;
+}
+
 function findDeadEnds(grid: number[][], rows: number, cols: number): Array<{ row: number; col: number }> {
   const result: Array<{ row: number; col: number }> = [];
   for (let r = 0; r < rows; r++) {

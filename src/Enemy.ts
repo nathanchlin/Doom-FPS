@@ -3,7 +3,7 @@ import { CONFIG } from './config';
 import type { Player } from './Player';
 import type { CollisionProvider } from './Level';
 
-export type EnemyType = 'standard' | 'rusher' | 'tank';
+export type EnemyType = 'standard' | 'rusher' | 'tank' | 'patrol';
 export type EnemyState = 'idle' | 'chase' | 'attack' | 'dead';
 
 /**
@@ -82,6 +82,19 @@ export class Enemy {
       this.attackDamage = 0;
       this.contactDamage = Math.round(cfg.contactDamage * dmgScale);
       this.contactCooldown = cfg.contactCooldown;
+    } else if (type === 'patrol') {
+      const cfg = CONFIG.enemy.types.patrol;
+      scale = cfg.scale;
+      bodyColor = cfg.color;
+      this.hp = Math.round(cfg.health * hpScale);
+      this.moveSpeed = cfg.moveSpeed;
+      this.engageDistance = cfg.engageDistance;
+      this.stopDistance = cfg.stopDistance;
+      this.attackCooldown = cfg.attackCooldown;
+      this.attackChance = cfg.attackChance;
+      this.attackDamage = Math.round(cfg.attackDamage * dmgScale);
+      this.contactDamage = 0;
+      this.contactCooldown = 0;
     } else {
       // tank
       const cfg = CONFIG.enemy.types.tank;
@@ -160,6 +173,7 @@ export class Enemy {
       if (this.alive) this.bodyMat.color.setHex(
         this.type === 'standard' ? CONFIG.enemy.types.standard.color :
         this.type === 'rusher' ? CONFIG.enemy.types.rusher.color :
+        this.type === 'patrol' ? CONFIG.enemy.types.patrol.color :
         CONFIG.enemy.types.tank.color,
       );
     }, 80);

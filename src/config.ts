@@ -63,6 +63,17 @@ export const CONFIG = {
         color: 0x666666,
         scale: 1.5,
       },
+      patrol: {
+        health: 300,
+        moveSpeed: 2.2,
+        attackCooldown: 1.5,
+        attackChance: 0.6,
+        attackDamage: 10,
+        engageDistance: 15,
+        stopDistance: 5,
+        color: 0x664488,
+        scale: 0.85,
+      },
     },
     // Per-floor scaling
     scaling: {
@@ -157,6 +168,17 @@ export const CONFIG = {
     special: {
       shieldHits: 3,
     },
+  },
+
+  // Floor hazards
+  hazard: {
+    damage: 15,        // HP per second
+    size: 3,           // 3m × 3m
+    baseCount: 3,      // floor 1 count
+    maxCount: 12,
+    color: 0xdd0000,
+    emissiveColor: 0xaa0000,
+    emissiveIntensity: 0.8,
   },
 
   // Colors
