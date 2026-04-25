@@ -17,6 +17,9 @@ export class Hud {
   private readonly damage: HTMLElement;
   private readonly hitmarker: HTMLElement;
   private readonly game: HTMLElement;
+  private readonly weaponName: HTMLElement;
+  private readonly shieldIndicator: HTMLElement;
+  private readonly shieldHits: HTMLElement;
 
   constructor() {
     this.hp = mustGet('hp');
@@ -32,6 +35,9 @@ export class Hud {
     this.damage = mustGet('damage');
     this.hitmarker = mustGet('hitmarker');
     this.game = mustGet('game');
+    this.weaponName = mustGet('weapon-name');
+    this.shieldIndicator = mustGet('shield-indicator');
+    this.shieldHits = mustGet('shield-hits');
   }
 
   setHp(v: number): void {
@@ -48,6 +54,19 @@ export class Hud {
 
   setDoors(opened: number, total: number): void {
     this.doorsEl.textContent = `${opened} / ${total}`;
+  }
+
+  setWeapon(name: string): void {
+    this.weaponName.textContent = name;
+  }
+
+  setShield(hits: number): void {
+    if (hits > 0) {
+      this.shieldIndicator.style.display = '';
+      this.shieldHits.textContent = String(hits);
+    } else {
+      this.shieldIndicator.style.display = 'none';
+    }
   }
 
   showRoomStatus(alive: number): void {
