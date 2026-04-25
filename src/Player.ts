@@ -193,6 +193,14 @@ export class Player {
     this.syncCamera();
   }
 
+  getYaw(): number {
+    return this.yaw;
+  }
+
+  getPitch(): number {
+    return this.pitch;
+  }
+
   /** Get the forward direction the camera is looking (for shooting raycasts). */
   getLookDir(): THREE.Vector3 {
     const v = new THREE.Vector3(0, 0, -1);

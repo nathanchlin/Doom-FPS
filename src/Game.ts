@@ -15,6 +15,12 @@ import type { WeaponType } from './weapons';
 import { Enemy } from './Enemy';
 import { Hazard } from './Hazard';
 import * as THREE from 'three';
+import { NetClient } from './client/NetClient';
+import { RemotePlayer } from './client/RemotePlayer';
+import { MultiplayerHud } from './client/MultiplayerHud';
+import { LobbyUI } from './client/LobbyUI';
+import { generateMaze as generateMazeSeeded } from './shared/maze';
+import { KEY, type SnapshotMessage, type PlayerState } from './shared/protocol';
 
 type GameState = 'exploring' | 'in_room' | 'dead';
 
@@ -58,6 +64,17 @@ export class Game {
     scoutActive: false,
   };
 
+  // ─── Multiplayer ───
+  private mode: 'singleplayer' | 'multiplayer' = 'singleplayer';
+  private net: NetClient | null = null;
+  private myId = -1;
+  private remotePlayers: Map<number, RemotePlayer> = new Map();
+  private mpHud: MultiplayerHud | null = null;
+  private lobbyUI: LobbyUI | null = null;
+  private inputSeq = 0;
+  private lastSnapshot: SnapshotMessage | null = null;
+  private mpRespawnTimer = -1;
+
   constructor(container: HTMLElement) {
     this.engine = new Engine(container);
     this.engine.scene.add(this.engine.camera);
@@ -73,6 +90,112 @@ export class Game {
     this.bindActions();
     this.registerUpdaters();
     this.refreshHud();
+  }
+
+  async startMultiplayer(wsUrl: string, playerName: string): Promise<void> {
+    this.mode = 'multiplayer';
+    this.net = new NetClient();
+    this.mpHud = new MultiplayerHud();
+    this.lobbyUI = new LobbyUI(this.net);
+
+    await this.net.connect(wsUrl);
+    this.net.send({ type: 'join', name: playerName });
+
+    this.net.on('welcome', (msg) => {
+      this.myId = msg.playerId;
+      this.lobbyUI!.show(this.myId);
+    });
+
+    this.net.on('lobby_state', (msg) => {
+      this.lobbyUI!.update(msg);
+    });
+
+    this.net.on('game_start', (msg) => {
+      this.lobbyUI!.hide();
+      this.sfx.unlock();
+
+      // Generate maze from seed
+      const mazeData = generateMazeSeeded(msg.floor, msg.mazeSeed);
+      if (this.level) this.level.dispose(this.engine.scene);
+      this.level = new Level(this.engine.scene, mazeData);
+      this.mazeData = mazeData;
+
+      if (!this.player) {
+        this.player = new Player(this.engine.camera, this.input, this.level);
+        this.weapon = new Weapon(this.player, this.weaponModel, this.sfx);
+      } else {
+        this.player.setLevel(this.level);
+      }
+
+      // Spawn visual-only enemies (AI runs on server)
+      for (const e of this.corridorEnemies) e.dispose(this.engine.scene);
+      this.corridorEnemies = [];
+      for (const es of msg.enemySpawns) {
+        const spawn = new THREE.Vector3(es.x, 0, es.z);
+        this.corridorEnemies.push(
+          new Enemy(spawn, this.engine.scene, es.enemyType as import('./Enemy').EnemyType, 1),
+        );
+      }
+
+      this.state = 'exploring';
+      this.mpHud!.show();
+      this.engine.start();
+      this.input.requestPointerLock();
+    });
+
+    this.net.on('snapshot', (msg) => {
+      this.lastSnapshot = msg;
+    });
+
+    this.net.on('hit', (msg) => {
+      if (msg.targetType === 'player' && msg.targetId === this.myId) {
+        this.sfx.damage();
+        this.hud.flashDamage();
+      }
+      if (msg.attackerId === this.myId) {
+        this.hud.flashHitMarker();
+        this.sfx.hit();
+      }
+    });
+
+    this.net.on('kill', (msg) => {
+      this.mpHud!.addKillFeedEntry(msg);
+      if (msg.victimId === this.myId) {
+        this.mpRespawnTimer = 3;
+        this.player.alive = false;
+      }
+      if (msg.killerId === this.myId) {
+        this.sfx.enemyDie();
+      }
+    });
+
+    this.net.on('respawn', (msg) => {
+      if (msg.playerId === this.myId) {
+        this.player.alive = true;
+        this.player.hp = 100;
+        this.player.ammo = 30;
+        this.player.teleportTo(msg.x, msg.z);
+        this.mpRespawnTimer = -1;
+        this.mpHud!.hideRespawnCountdown();
+      }
+    });
+
+    this.net.on('game_over', (msg) => {
+      const el = document.getElementById('mp-gameover')!;
+      const winner = document.getElementById('mp-winner')!;
+      const sb = document.getElementById('mp-scoreboard-final')!;
+      winner.textContent = `${msg.winnerName} 获胜！`;
+      sb.innerHTML = msg.scoreboard
+        .map((p, i) => `<div>#${i + 1} ${p.name} — ${p.kills} 击杀 / ${p.deaths} 死亡</div>`)
+        .join('');
+      el.style.display = 'flex';
+      this.input.exitPointerLock();
+    });
+
+    this.net.on('disconnected', () => {
+      alert('与主机断开连接');
+      window.location.reload();
+    });
   }
 
   private initFloor(floor: number): void {
@@ -164,6 +287,28 @@ export class Game {
     // E to interact
     this.input.onInteract.push(() => {
       if (this.transitioning) return;
+      if (this.mode === 'multiplayer') {
+        if (this.net && this.player) {
+          this.inputSeq++;
+          const keys =
+            (this.input.isDown('w') ? KEY.W : 0) |
+            (this.input.isDown('a') ? KEY.A : 0) |
+            (this.input.isDown('s') ? KEY.S : 0) |
+            (this.input.isDown('d') ? KEY.D : 0) |
+            (this.input.isDown(' ') ? KEY.SPACE : 0) |
+            (this.input.isDown('shift') ? KEY.SHIFT : 0);
+          this.net.send({
+            type: 'input',
+            seq: this.inputSeq,
+            keys,
+            yaw: this.player.getYaw(),
+            pitch: this.player.getPitch(),
+            fire: false,
+            interact: true,
+          });
+        }
+        return;
+      }
       if (this.state === 'exploring') {
         this.tryOpenDoor().catch((e) => console.error('tryOpenDoor error:', e));
       } else if (this.state === 'in_room') {
@@ -393,6 +538,14 @@ export class Game {
   }
 
   private update(dt: number): void {
+    if (this.mode === 'singleplayer') {
+      this.updateSingleplayer(dt);
+    } else {
+      this.updateMultiplayer(dt);
+    }
+  }
+
+  private updateSingleplayer(dt: number): void {
     if (this.state === 'dead') {
       this.weaponModel.update(dt);
       return;
@@ -411,6 +564,133 @@ export class Game {
 
     this.hud.setAmmo(this.player.ammo);
     this.hud.setHp(this.player.hp);
+  }
+
+  private updateMultiplayer(dt: number): void {
+    if (!this.net || !this.player) return;
+
+    // 1. Local player: prediction
+    this.player.update(dt);
+    this.weaponModel.update(dt);
+
+    // 2. Send input to server
+    this.inputSeq++;
+    const keys =
+      (this.input.isDown('w') ? KEY.W : 0) |
+      (this.input.isDown('a') ? KEY.A : 0) |
+      (this.input.isDown('s') ? KEY.S : 0) |
+      (this.input.isDown('d') ? KEY.D : 0) |
+      (this.input.isDown(' ') ? KEY.SPACE : 0) |
+      (this.input.isDown('shift') ? KEY.SHIFT : 0);
+
+    this.net.send({
+      type: 'input',
+      seq: this.inputSeq,
+      keys,
+      yaw: this.player.getYaw(),
+      pitch: this.player.getPitch(),
+      fire: this.input.isMouseDown(),
+      interact: false,
+    });
+
+    // 3. Process latest snapshot
+    const snap = this.lastSnapshot;
+    if (snap) {
+      this.lastSnapshot = null;
+
+      // Update local player from server
+      const me = snap.players.find((p: PlayerState) => p.id === this.myId);
+      if (me) {
+        const dx = me.x - this.player.position.x;
+        const dz = me.z - this.player.position.z;
+        if (dx * dx + dz * dz > 0.25) {
+          this.player.position.x = me.x;
+          this.player.position.z = me.z;
+        }
+        this.player.hp = me.hp;
+        this.player.ammo = me.ammo;
+        this.player.alive = me.alive;
+        this.hud.setHp(me.hp);
+        this.hud.setAmmo(me.ammo);
+      }
+
+      // Update remote players
+      for (const ps of snap.players) {
+        if (ps.id === this.myId) continue;
+        let rp = this.remotePlayers.get(ps.id);
+        if (!rp) {
+          rp = new RemotePlayer(ps.id, ps.name, this.engine.scene);
+          this.remotePlayers.set(ps.id, rp);
+        }
+        rp.pushState(ps);
+      }
+
+      // Remove disconnected
+      for (const [id, rp] of this.remotePlayers) {
+        if (!snap.players.find((p: PlayerState) => p.id === id)) {
+          rp.dispose(this.engine.scene);
+          this.remotePlayers.delete(id);
+        }
+      }
+
+      // Update enemies from snapshot (position only)
+      for (const es of snap.enemies) {
+        if (es.id < this.corridorEnemies.length) {
+          const e = this.corridorEnemies[es.id]!;
+          e.position.x = es.x;
+          e.position.z = es.z;
+          e.group.position.set(es.x, 0, es.z);
+          e.group.rotation.y = es.yaw;
+          if (es.state === 'dead' && e.alive) {
+            e.alive = false;
+            e.state = 'dead';
+          } else if (es.state !== 'dead' && !e.alive) {
+            e.alive = true;
+            e.state = es.state;
+            e.hp = es.hp;
+            e.group.rotation.x = 0;
+            e.group.position.y = 0;
+          }
+        }
+      }
+
+      // Timer
+      this.mpHud?.setTimeRemaining(snap.timeRemaining);
+    }
+
+    // 4. Interpolate remote players
+    for (const rp of this.remotePlayers.values()) {
+      rp.update(dt);
+    }
+
+    // 5. Respawn countdown
+    if (this.mpRespawnTimer > 0) {
+      this.mpRespawnTimer -= dt;
+      this.mpHud?.showRespawnCountdown(this.mpRespawnTimer);
+    }
+
+    // 6. Scoreboard (Tab key)
+    if (this.input.isDown('tab')) {
+      const allPlayers: PlayerState[] = [];
+      for (const rp of this.remotePlayers.values()) {
+        const latest = rp.interp.getLatest();
+        if (latest) allPlayers.push(latest);
+      }
+      this.mpHud?.showScoreboard(allPlayers);
+    } else {
+      this.mpHud?.hideScoreboard();
+    }
+
+    // 7. Wall collision for local player
+    if (this.level && this.player.alive) {
+      const resolved = this.level.resolveCircleVsWalls(
+        this.player.position.x,
+        this.player.position.z,
+        CONFIG.player.radius,
+      );
+      this.player.position.x = resolved.x;
+      this.player.position.z = resolved.z;
+    }
   }
 
   private updateExploring(dt: number): void {
