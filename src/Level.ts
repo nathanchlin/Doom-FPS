@@ -10,6 +10,8 @@ export interface AABB2D {
 
 export interface CollisionProvider {
   resolveCircleVsWalls(x: number, z: number, radius: number): { x: number; z: number };
+  /** Check if a straight line from (ax,az) to (bx,bz) is blocked by any wall */
+  hasLineOfSight(ax: number, az: number, bx: number, bz: number): boolean;
 }
 
 /**
@@ -246,6 +248,44 @@ export class Level {
       }
     }
     return { x: rx, z: rz };
+  }
+
+  /** Ray-vs-AABB line-of-sight check in XZ plane */
+  hasLineOfSight(ax: number, az: number, bx: number, bz: number): boolean {
+    const dx = bx - ax;
+    const dz = bz - az;
+    for (const w of this.walls) {
+      // Check if segment (ax,az)→(bx,bz) intersects AABB w
+      let tmin = 0, tmax = 1;
+
+      if (Math.abs(dx) > 1e-8) {
+        const t1 = (w.minX - ax) / dx;
+        const t2 = (w.maxX - ax) / dx;
+        const tlo = Math.min(t1, t2);
+        const thi = Math.max(t1, t2);
+        tmin = Math.max(tmin, tlo);
+        tmax = Math.min(tmax, thi);
+        if (tmin > tmax) continue;
+      } else {
+        if (ax < w.minX || ax > w.maxX) continue;
+      }
+
+      if (Math.abs(dz) > 1e-8) {
+        const t1 = (w.minZ - az) / dz;
+        const t2 = (w.maxZ - az) / dz;
+        const tlo = Math.min(t1, t2);
+        const thi = Math.max(t1, t2);
+        tmin = Math.max(tmin, tlo);
+        tmax = Math.min(tmax, thi);
+        if (tmin > tmax) continue;
+      } else {
+        if (az < w.minZ || az > w.maxZ) continue;
+      }
+
+      // Segment intersects this wall
+      return false;
+    }
+    return true;
   }
 
   dispose(scene: THREE.Scene): void {

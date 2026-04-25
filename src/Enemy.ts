@@ -256,11 +256,13 @@ export class Enemy {
         }
       }
     } else if (this.state === 'attack') {
-      // Standard / Tank ranged attack
+      // Standard / Tank / Patrol ranged attack
       this.attackTimer -= dt;
       if (this.attackTimer <= 0) {
         this.attackTimer = this.attackCooldown;
-        if (Math.random() < this.attackChance) {
+        // Only hit if line-of-sight is clear (no shooting through walls)
+        if (Math.random() < this.attackChance &&
+            collider.hasLineOfSight(this.position.x, this.position.z, player.position.x, player.position.z)) {
           shot = true;
         }
         this.eyeMat.emissiveIntensity = 4.5;

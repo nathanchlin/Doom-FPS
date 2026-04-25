@@ -330,6 +330,11 @@ export class Room {
     return { x: rx, z: rz };
   }
 
+  /** Rooms are small enclosed spaces — always has LOS */
+  hasLineOfSight(_ax: number, _az: number, _bx: number, _bz: number): boolean {
+    return true;
+  }
+
   dispose(scene: THREE.Scene): void {
     for (const e of this.enemies) e.dispose(scene);
     this.enemies = [];
