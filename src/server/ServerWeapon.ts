@@ -89,7 +89,7 @@ export function processShot(
 
   // Test against other players
   for (const p of players) {
-    if (p.id === shooter.id || !p.alive) continue;
+    if (p.id === shooter.id || !p.alive || p.team === shooter.team) continue;
 
     // Player hitbox: centered at (p.x, p.y - PLAYER_HEIGHT/2, p.z)
     // feet at p.y - PLAYER_HEIGHT, head at p.y

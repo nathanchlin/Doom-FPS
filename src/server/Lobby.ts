@@ -7,6 +7,7 @@ import {
   type PlayerJoinedMessage,
   type PlayerLeftMessage,
   type ClientMessage,
+  type Team,
 } from '../shared/protocol';
 
 export interface LobbyPlayer {
@@ -126,13 +127,17 @@ export class Lobby {
   }
 
   private broadcastLobbyState(): void {
+    // Pre-assign teams for display: alternate red/blue
+    const playerArr = Array.from(this.players.values());
     const msg: LobbyStateMessage = {
       type: 'lobby_state',
-      players: Array.from(this.players.values()).map(p => ({
+      players: playerArr.map((p, i) => ({
         id: p.id,
         name: p.name,
         ready: p.ready,
         isHost: p.isHost,
+        team: (i % 2 === 0 ? 'red' : 'blue') as Team,
+        isBot: false,
       })),
       settings: {
         killTarget: this.settings.killTarget,

@@ -1,4 +1,4 @@
-import { KEY, type InputMessage } from '../shared/protocol';
+import { KEY, type InputMessage, type Team } from '../shared/protocol';
 import { resolveCircleVsAABBs, type AABB2D } from '../shared/collision';
 
 // ─── Constants (must match config.ts) ───
@@ -17,6 +17,8 @@ const INVINCIBLE_DURATION = 2.0;
 export class ServerPlayer {
   id: number;
   name: string;
+  team: Team = 'red';
+  isBot = false;
 
   // Position — y is eye-level (PLAYER_HEIGHT when on floor)
   x = 0;

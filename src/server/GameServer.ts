@@ -16,6 +16,9 @@ import {
   type PickupTakenMessage,
   type PickupSpawnedMessage,
   type GameOverMessage,
+  type Team,
+  type TeamScores,
+  type TeamsShuffledMessage,
 } from '../shared/protocol';
 import {
   generateMaze,
@@ -38,6 +41,8 @@ import {
   AMMO_AMOUNT,
   type ServerPickup,
 } from './Pickup';
+import { TeamManager } from './TeamManager';
+import { BotPlayer, getBotName } from './BotPlayer';
 
 // ─── Constants ───
 
@@ -71,6 +76,10 @@ export class GameServer {
   private corridorCells: Array<{ row: number; col: number }> = [];
   private corridorWorldPos: Array<{ x: number; z: number }> = [];
   private config: MatchConfig = { ...DEFAULT_MATCH_CONFIG };
+  private teamManager = new TeamManager();
+  private teamScores: TeamScores = { red: 0, blue: 0 };
+  private shuffleTimer = 0;
+  private readonly SHUFFLE_INTERVAL = 180; // 3 minutes
 
   private tickInterval: ReturnType<typeof setInterval> | null = null;
   private tick = 0;
@@ -139,6 +148,7 @@ export class GameServer {
     const playerName = player?.name ?? 'Unknown';
     this.players.delete(playerId);
     this.weaponCooldowns.removePlayer(playerId);
+    this.teamManager.remove(playerId);
 
     const leftMsg: PlayerLeftMessage = { type: 'player_left', id: playerId, name: playerName };
     this.broadcast(leftMsg);
@@ -146,8 +156,9 @@ export class GameServer {
     // Also remove from lobby so they don't linger
     this.lobby.removePlayer(playerId);
 
-    // If no players left, stop the game
-    if (this.players.size === 0 && this.state === 'playing') {
+    // If no human players left, stop the game
+    const humanPlayers = Array.from(this.players.values()).filter(p => !p.isBot);
+    if (humanPlayers.length === 0 && this.state === 'playing') {
       this.stopGame();
     }
   }
@@ -175,18 +186,42 @@ export class GameServer {
 
     // Spawn players
     this.players.clear();
+    this.teamManager.clear();
+    this.teamScores = { red: 0, blue: 0 };
+    this.shuffleTimer = this.SHUFFLE_INTERVAL;
+
+    // Assign human players to teams
     for (let i = 0; i < lobbyPlayers.length; i++) {
       const lp = lobbyPlayers[i]!;
       const sp = new ServerPlayer(lp.id, lp.name);
-
-      // Spawn at spaced corridor positions
-      if (this.corridorWorldPos.length > 0) {
-        const idx = Math.floor((i / lobbyPlayers.length) * this.corridorWorldPos.length);
-        const pos = this.corridorWorldPos[Math.min(idx, this.corridorWorldPos.length - 1)]!;
-        sp.teleportTo(pos.x, pos.z);
-      }
-
+      const team = this.teamManager.assign(lp.id);
+      sp.team = team;
       this.players.set(lp.id, sp);
+    }
+
+    // Create bots to fill to 8 total
+    const botsNeeded = Math.max(0, 8 - lobbyPlayers.length);
+    for (let i = 0; i < botsNeeded; i++) {
+      const botId = 1000 + i;
+      const botName = getBotName(i);
+      const bot = new BotPlayer(botId, botName);
+      const team = this.teamManager.assign(botId);
+      bot.team = team;
+      this.players.set(botId, bot);
+    }
+
+    // Spawn players by team (red in first half, blue in second half)
+    const halfIdx = Math.floor(this.corridorWorldPos.length / 2);
+    const redSpawns = this.corridorWorldPos.slice(0, halfIdx);
+    const blueSpawns = this.corridorWorldPos.slice(halfIdx);
+
+    for (const [, player] of this.players) {
+      const spawns = player.team === 'red' ? redSpawns : blueSpawns;
+      if (spawns.length > 0) {
+        const idx = Math.floor(this.rng() * spawns.length);
+        const pos = spawns[idx]!;
+        player.teleportTo(pos.x, pos.z);
+      }
     }
 
     // Spawn enemies (4 + playerCount)
@@ -233,17 +268,25 @@ export class GameServer {
     this.tick++;
     const dt = TICK_DT;
 
-    // 1. Process all player inputs
+    // 1. Generate bot inputs
+    const allPlayersArr = Array.from(this.players.values());
+    for (const player of this.players.values()) {
+      if (player instanceof BotPlayer) {
+        player.generateInput(dt, allPlayersArr, this.walls, this.teamManager, this.rng);
+      }
+    }
+
+    // 2. Process all player inputs
     for (const player of this.players.values()) {
       player.processInputs(dt, this.walls);
     }
 
-    // 2. Update timers (invincibility)
+    // 3. Update timers (invincibility)
     for (const player of this.players.values()) {
       player.updateTimers(dt);
     }
 
-    // 3. Process shots
+    // 4. Process shots
     const alivePlayers = this.getAlivePlayers();
     for (const player of this.players.values()) {
       if (!player.alive || !player.pendingFire) continue;
@@ -276,6 +319,7 @@ export class GameServer {
 
             if (killed) {
               player.kills++;
+              this.teamScores[player.team]++;
               target.respawnTimer = this.config.respawnDelay;
 
               const killMsg: KillMessage = {
@@ -332,10 +376,10 @@ export class GameServer {
       }
     }
 
-    // 4. Update weapon cooldowns
+    // 5. Update weapon cooldowns
     this.weaponCooldowns.update(dt);
 
-    // 5. Update enemy AI
+    // 6. Update enemy AI
     const playersArr = Array.from(this.players.values());
     for (const enemy of this.enemies) {
       const result = enemy.update(dt, playersArr, this.walls, this.rng);
@@ -383,7 +427,7 @@ export class GameServer {
       }
     }
 
-    // 6. Process pickup interactions
+    // 7. Process pickup interactions
     for (const player of this.players.values()) {
       if (!player.alive) continue;
       // Auto-claim pickups when walking near them (no interact needed)
@@ -403,7 +447,7 @@ export class GameServer {
       }
     }
 
-    // 7. Update pickup respawns
+    // 8. Update pickup respawns
     const respawned = updatePickups(this.pickups, dt);
     for (const pickupId of respawned) {
       const p = this.pickups.find(pk => pk.id === pickupId);
@@ -419,7 +463,7 @@ export class GameServer {
       }
     }
 
-    // 8. Check respawn timers for dead players
+    // 9. Check respawn timers for dead players
     for (const player of this.players.values()) {
       if (player.alive) continue;
       player.respawnTimer -= dt;
@@ -437,7 +481,14 @@ export class GameServer {
       }
     }
 
-    // 9. Update time and check win condition
+    // 10. Check shuffle timer
+    this.shuffleTimer -= dt;
+    if (this.shuffleTimer <= 0) {
+      this.performShuffle();
+      this.shuffleTimer = this.SHUFFLE_INTERVAL;
+    }
+
+    // 11. Update time and check win condition
     this.timeRemaining -= dt;
     const winner = this.checkWinCondition();
     if (winner) {
@@ -445,33 +496,47 @@ export class GameServer {
       return;
     }
 
-    // 10. Broadcast per-client snapshot
+    // 12. Broadcast per-client snapshot
     this.broadcastSnapshots();
   }
 
   private checkWinCondition(): { reason: 'kill_target' | 'time_up'; winnerId: number } | null {
-    // Check kill target
-    for (const player of this.players.values()) {
-      if (player.kills >= this.config.killTarget) {
-        return { reason: 'kill_target', winnerId: player.id };
-      }
+    // Check team kill target
+    if (this.teamScores.red >= this.config.killTarget) {
+      // Winner is top scorer on red team
+      const redPlayers = this.teamManager.getPlayersByTeam('red');
+      const winnerId = this.getTopScorer(redPlayers);
+      return { reason: 'kill_target', winnerId };
+    }
+    if (this.teamScores.blue >= this.config.killTarget) {
+      const bluePlayers = this.teamManager.getPlayersByTeam('blue');
+      const winnerId = this.getTopScorer(bluePlayers);
+      return { reason: 'kill_target', winnerId };
     }
 
     // Check time
     if (this.timeRemaining <= 0) {
-      // Winner is the player with most kills
-      let bestId = -1;
-      let bestKills = -1;
-      for (const player of this.players.values()) {
-        if (player.kills > bestKills) {
-          bestKills = player.kills;
-          bestId = player.id;
-        }
-      }
-      return { reason: 'time_up', winnerId: bestId };
+      // Winner is team with higher score
+      const winningTeam: Team = this.teamScores.red >= this.teamScores.blue ? 'red' : 'blue';
+      const teamPlayers = this.teamManager.getPlayersByTeam(winningTeam);
+      const winnerId = this.getTopScorer(teamPlayers);
+      return { reason: 'time_up', winnerId };
     }
 
     return null;
+  }
+
+  private getTopScorer(playerIds: number[]): number {
+    let bestId = -1;
+    let bestKills = -1;
+    for (const id of playerIds) {
+      const player = this.players.get(id);
+      if (player && player.kills > bestKills) {
+        bestKills = player.kills;
+        bestId = id;
+      }
+    }
+    return bestId;
   }
 
   private endGame(reason: 'kill_target' | 'time_up', winnerId: number): void {
@@ -479,6 +544,7 @@ export class GameServer {
     this.stopTickLoop();
 
     const winner = this.players.get(winnerId);
+    const winnerTeam: Team | null = winner ? winner.team : null;
     const duration = this.config.timeLimit - this.timeRemaining;
 
     const scoreboard = Array.from(this.players.values())
@@ -495,6 +561,8 @@ export class GameServer {
       reason,
       winnerId,
       winnerName: winner?.name ?? 'Unknown',
+      winnerTeam,
+      teamScores: { ...this.teamScores },
       scoreboard,
       duration,
     };
@@ -513,7 +581,39 @@ export class GameServer {
     this.pickups = [];
     this.walls = [];
     this.maze = null;
+    this.teamManager.clear();
+    this.teamScores = { red: 0, blue: 0 };
     this.lobby.reset();
+  }
+
+  private performShuffle(): void {
+    const playerIds = [...this.players.keys()];
+    this.teamManager.shuffle(playerIds, this.rng);
+
+    // Apply new teams and teleport
+    const halfIdx = Math.floor(this.corridorWorldPos.length / 2);
+    const redSpawns = this.corridorWorldPos.slice(0, halfIdx);
+    const blueSpawns = this.corridorWorldPos.slice(halfIdx);
+
+    for (const [id, player] of this.players) {
+      player.team = this.teamManager.getTeam(id);
+      const spawns = player.team === 'red' ? redSpawns : blueSpawns;
+      if (spawns.length > 0) {
+        const spawn = spawns[Math.floor(this.rng() * spawns.length)]!;
+        player.teleportTo(spawn.x, spawn.z);
+      }
+      player.hp = 100;
+      player.alive = true;
+      player.invincible = true;
+      player.invincibleTimer = 2.0;
+      player.respawnTimer = 0;
+    }
+
+    const shuffleMsg: TeamsShuffledMessage = {
+      type: 'teams_shuffled',
+      players: playerIds.map(id => ({ id, team: this.teamManager.getTeam(id) })),
+    };
+    this.broadcast(shuffleMsg);
   }
 
   private stopGame(): void {
@@ -545,6 +645,7 @@ export class GameServer {
         players: playerStates,
         enemies: enemyStates,
         pickups: pickupStates,
+        teamScores: { ...this.teamScores },
       };
 
       this.send(ws, snapshot);
@@ -568,6 +669,8 @@ export class GameServer {
         deaths: p.deaths,
         name: p.name,
         invincible: p.invincible,
+        team: p.team,
+        isBot: p.isBot,
       });
     }
     return states;

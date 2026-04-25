@@ -6,6 +6,13 @@ export interface Vec3 {
   z: number;
 }
 
+export type Team = 'red' | 'blue';
+
+export interface TeamScores {
+  red: number;
+  blue: number;
+}
+
 export interface MatchConfig {
   killTarget: number;
   timeLimit: number;   // seconds
@@ -34,6 +41,8 @@ export interface PlayerState {
   deaths: number;
   name: string;
   invincible: boolean;
+  team: Team;
+  isBot: boolean;
 }
 
 export interface EnemyState {
@@ -113,7 +122,7 @@ export interface WelcomeMessage {
 
 export interface LobbyStateMessage {
   type: 'lobby_state';
-  players: Array<{ id: number; name: string; ready: boolean; isHost: boolean }>;
+  players: Array<{ id: number; name: string; ready: boolean; isHost: boolean; team: Team; isBot: boolean }>;
   settings: { killTarget: number; timeLimit: number };
 }
 
@@ -133,6 +142,7 @@ export interface SnapshotMessage {
   players: PlayerState[];
   enemies: EnemyState[];
   pickups: PickupState[];
+  teamScores: TeamScores;
 }
 
 export interface HitMessage {
@@ -191,8 +201,15 @@ export interface GameOverMessage {
   reason: 'kill_target' | 'time_up';
   winnerId: number;
   winnerName: string;
+  winnerTeam: Team | null;
+  teamScores: TeamScores;
   scoreboard: Array<{ id: number; name: string; kills: number; deaths: number }>;
   duration: number;
+}
+
+export interface TeamsShuffledMessage {
+  type: 'teams_shuffled';
+  players: Array<{ id: number; team: Team }>;
 }
 
 export type ServerMessage =
@@ -207,4 +224,5 @@ export type ServerMessage =
   | PlayerLeftMessage
   | PickupTakenMessage
   | PickupSpawnedMessage
-  | GameOverMessage;
+  | GameOverMessage
+  | TeamsShuffledMessage;
