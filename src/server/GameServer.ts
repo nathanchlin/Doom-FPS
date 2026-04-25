@@ -626,16 +626,27 @@ export class GameServer {
 
   /**
    * Build wall AABBs from maze data.
-   * Multiplayer: no door splits — all walls are full-length.
+   * Matches client Level.ts buildFromMaze() exactly, including door splits.
    */
   private buildWalls(maze: MazeData): AABB2D[] {
     const cs = CELL_SIZE;
     const wt = WALL_THICKNESS;
+    const doorW = 1.4; // CONFIG.door.width
     const totalW = maze.cols * cs;
     const totalD = maze.rows * cs;
     const halfW = totalW / 2;
     const halfD = totalD / 2;
     const wallList: AABB2D[] = [];
+
+    // Build door lookup — same canonicalization as Level.ts
+    const doorWalls = new Set<string>();
+    for (const door of maze.doors) {
+      const { cellRow: r, cellCol: c, wallDir } = door;
+      if (wallDir === DIR.N) doorWalls.add(`N:${r}:${c}`);
+      else if (wallDir === DIR.S) doorWalls.add(`N:${r + 1}:${c}`);
+      else if (wallDir === DIR.W) doorWalls.add(`W:${r}:${c}`);
+      else if (wallDir === DIR.E) doorWalls.add(`W:${r}:${c + 1}`);
+    }
 
     for (let r = 0; r < maze.rows; r++) {
       for (let c = 0; c < maze.cols; c++) {
@@ -645,22 +656,28 @@ export class GameServer {
 
         // North wall (horizontal, along X axis, at z = cz)
         if (!(open & DIR.N)) {
-          wallList.push({
-            minX: cx,
-            maxX: cx + cs,
-            minZ: cz - wt / 2,
-            maxZ: cz + wt / 2,
-          });
+          if (doorWalls.has(`N:${r}:${c}`)) {
+            const sideLen = (cs - doorW) / 2;
+            if (sideLen > 0.01) {
+              wallList.push({ minX: cx, maxX: cx + sideLen, minZ: cz - wt / 2, maxZ: cz + wt / 2 });
+              wallList.push({ minX: cx + cs - sideLen, maxX: cx + cs, minZ: cz - wt / 2, maxZ: cz + wt / 2 });
+            }
+          } else {
+            wallList.push({ minX: cx, maxX: cx + cs, minZ: cz - wt / 2, maxZ: cz + wt / 2 });
+          }
         }
 
         // West wall (vertical, along Z axis, at x = cx)
         if (!(open & DIR.W)) {
-          wallList.push({
-            minX: cx - wt / 2,
-            maxX: cx + wt / 2,
-            minZ: cz,
-            maxZ: cz + cs,
-          });
+          if (doorWalls.has(`W:${r}:${c}`)) {
+            const sideLen = (cs - doorW) / 2;
+            if (sideLen > 0.01) {
+              wallList.push({ minX: cx - wt / 2, maxX: cx + wt / 2, minZ: cz, maxZ: cz + sideLen });
+              wallList.push({ minX: cx - wt / 2, maxX: cx + wt / 2, minZ: cz + cs - sideLen, maxZ: cz + cs });
+            }
+          } else {
+            wallList.push({ minX: cx - wt / 2, maxX: cx + wt / 2, minZ: cz, maxZ: cz + cs });
+          }
         }
       }
     }
@@ -669,24 +686,14 @@ export class GameServer {
     for (let r = 0; r < maze.rows; r++) {
       const cx = -halfW + maze.cols * cs;
       const cz = -halfD + r * cs;
-      wallList.push({
-        minX: cx - wt / 2,
-        maxX: cx + wt / 2,
-        minZ: cz,
-        maxZ: cz + cs,
-      });
+      wallList.push({ minX: cx - wt / 2, maxX: cx + wt / 2, minZ: cz, maxZ: cz + cs });
     }
 
     // Southern boundary (bottom row south walls)
     for (let c = 0; c < maze.cols; c++) {
       const cx = -halfW + c * cs;
       const cz = -halfD + maze.rows * cs;
-      wallList.push({
-        minX: cx,
-        maxX: cx + cs,
-        minZ: cz - wt / 2,
-        maxZ: cz + wt / 2,
-      });
+      wallList.push({ minX: cx, maxX: cx + cs, minZ: cz - wt / 2, maxZ: cz + wt / 2 });
     }
 
     return wallList;
