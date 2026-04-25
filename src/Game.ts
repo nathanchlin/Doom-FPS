@@ -119,9 +119,9 @@ export class Game {
     this.input.onInteract.push(() => {
       if (this.transitioning) return;
       if (this.state === 'exploring') {
-        this.tryOpenDoor();
+        this.tryOpenDoor().catch((e) => console.error('tryOpenDoor error:', e));
       } else if (this.state === 'in_room') {
-        this.tryRoomInteract();
+        this.tryRoomInteract().catch((e) => console.error('tryRoomInteract error:', e));
       }
     });
 
@@ -139,9 +139,10 @@ export class Game {
   private async tryOpenDoor(): Promise<void> {
     if (!this.nearDoor || this.nearDoor.getState() === 'used') return;
 
+    const door = this.nearDoor;
     this.transitioning = true;
     this.sfx.doorOpen();
-    this.nearDoor.markUsed();
+    door.markUsed();
     this.doorsOpened++;
     this.hud.setDoors(this.doorsOpened, this.doors.length);
     this.hud.hideInteract();
@@ -153,7 +154,7 @@ export class Game {
     await this.hud.fadeIn();
 
     // Create room
-    const roomType = this.nearDoor.roomType;
+    const roomType = door.roomType;
     this.currentRoom = new Room(roomType, this.engine.scene, this.floor);
 
     // Swap player collision to room walls
