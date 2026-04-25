@@ -145,6 +145,20 @@ export const CONFIG = {
     floorDisplayDuration: 1.5,
   },
 
+  // Cards
+  cards: {
+    stat: {
+      healthBoost: 25,
+      ammoExpand: 10,
+      speedUp: 1.0,
+      sprintUp: 1.5,
+      damageMultiplier: 1.15,
+    },
+    special: {
+      shieldHits: 3,
+    },
+  },
+
   // Colors
   colors: {
     floor: 0xf5f5f5,
