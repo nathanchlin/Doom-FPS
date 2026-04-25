@@ -23,6 +23,7 @@ export class Door {
   private frameMat: THREE.MeshStandardMaterial;
   private glowMat: THREE.MeshStandardMaterial;
   private glowMesh: THREE.Mesh;
+  private scoutLight: THREE.PointLight | null = null;
 
   constructor(placement: DoorPlacement, mazeRows: number, mazeCols: number, scene: THREE.Scene) {
     this.placement = placement;
@@ -129,7 +130,26 @@ export class Door {
     this.glowMat.opacity = 0;
   }
 
+  /** Show colored glow above door indicating room type (scout card) */
+  enableScout(): void {
+    if (this.scoutLight || this.state === 'used') return;
+    const colorMap: Record<string, number> = {
+      combat: 0xff4444,
+      treasure: 0xffaa22,
+      exit: 0x44ff88,
+    };
+    const color = colorMap[this.roomType] ?? 0xffffff;
+    this.scoutLight = new THREE.PointLight(color, 3.0, 8, 1.0);
+    this.scoutLight.position.set(0, CONFIG.door.height + 0.5, 0);
+    this.group.add(this.scoutLight);
+  }
+
   dispose(scene: THREE.Scene): void {
+    if (this.scoutLight) {
+      this.group.remove(this.scoutLight);
+      this.scoutLight.dispose();
+      this.scoutLight = null;
+    }
     scene.remove(this.group);
     this.group.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
