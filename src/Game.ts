@@ -84,9 +84,11 @@ export class Game {
     const spawn = this.level.getPlayerSpawn();
     this.player.teleportTo(spawn.x, spawn.z);
 
-    // Create doors
+    // Create doors and register their collision
     for (const dp of this.mazeData.doors) {
-      this.doors.push(new Door(dp, this.mazeData.rows, this.mazeData.cols, this.engine.scene));
+      const door = new Door(dp, this.mazeData.rows, this.mazeData.cols, this.engine.scene);
+      this.doors.push(door);
+      this.level.walls.push(door.collisionAABB);
     }
 
     this.doorsOpened = 0;
@@ -146,6 +148,10 @@ export class Game {
     this.doorsOpened++;
     this.hud.setDoors(this.doorsOpened, this.doors.length);
     this.hud.hideInteract();
+
+    // Remove door collision so player can walk through after returning
+    const idx = this.level.walls.indexOf(door.collisionAABB);
+    if (idx >= 0) this.level.walls.splice(idx, 1);
 
     // Save position for return
     this.player.savePosition();

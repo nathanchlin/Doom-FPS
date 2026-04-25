@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { CONFIG } from './config';
 import { DIR, doorWorldPosition, type DoorPlacement, type RoomType } from './Maze';
+import type { AABB2D } from './Level';
 
 export type DoorState = 'closed' | 'open' | 'used';
 
 /**
  * Door — dark rectangular frame embedded in a maze wall.
  * Glows when player is within interact distance.
- * Tracks open/used state.
+ * Tracks open/used state. Has a collision AABB that blocks passage until opened.
  */
 export class Door {
   readonly group = new THREE.Group();
@@ -15,6 +16,8 @@ export class Door {
   readonly placement: DoorPlacement;
   readonly worldX: number;
   readonly worldZ: number;
+  /** Collision box that blocks the doorway while closed */
+  readonly collisionAABB: AABB2D;
 
   private state: DoorState = 'closed';
   private frameMat: THREE.MeshStandardMaterial;
@@ -32,9 +35,27 @@ export class Door {
     const w = CONFIG.door.width;
     const h = CONFIG.door.height;
     const d = 0.15;
+    const wt = CONFIG.maze.wallThickness;
 
     // Determine rotation based on wall direction
     const isNS = placement.wallDir === DIR.N || placement.wallDir === DIR.S;
+
+    // Collision AABB — same shape as the door frame, blocks passage
+    if (isNS) {
+      this.collisionAABB = {
+        minX: this.worldX - w / 2,
+        maxX: this.worldX + w / 2,
+        minZ: this.worldZ - wt / 2,
+        maxZ: this.worldZ + wt / 2,
+      };
+    } else {
+      this.collisionAABB = {
+        minX: this.worldX - wt / 2,
+        maxX: this.worldX + wt / 2,
+        minZ: this.worldZ - w / 2,
+        maxZ: this.worldZ + w / 2,
+      };
+    }
 
     // Frame (dark rectangle)
     this.frameMat = new THREE.MeshStandardMaterial({
