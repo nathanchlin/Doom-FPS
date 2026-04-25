@@ -40,7 +40,7 @@ export class Room {
   readonly returnDoorX = 0;
   readonly returnDoorZ: number;
 
-  constructor(type: RoomType, scene: THREE.Scene, floor: number) {
+  constructor(type: RoomType, private readonly scene: THREE.Scene, floor: number) {
     this.type = type;
     const s = CONFIG.room.size;
     const half = s / 2;
@@ -264,13 +264,15 @@ export class Room {
       }
     }
 
-    // Check if combat cleared
+    // Check if combat cleared — spawn reward chest
     if (this.type === 'combat' && !this.cleared && aliveCount === 0) {
       this.cleared = true;
       this.returnDoorUnlocked = true;
       // Visual: return door turns green
       this.returnDoorMat.emissive.setHex(0x44ff88);
       this.returnDoorMat.emissiveIntensity = 1.0;
+      // Spawn reward chest at room center
+      this.chest = new Chest(500, 500, this.scene);
     }
 
     // Update chest
