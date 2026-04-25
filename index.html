@@ -166,7 +166,7 @@
         <div id="lobby-ip" class="lobby-ip"></div>
         <div id="lobby-players"></div>
         <div id="lobby-settings">
-          <label>击杀目标: <select id="lobby-kill-target">
+          <label>团队击杀目标: <select id="lobby-kill-target">
             <option value="10">10</option>
             <option value="20" selected>20</option>
             <option value="30">30</option>
@@ -184,10 +184,12 @@
 
     <!-- Multiplayer HUD -->
     <div id="mp-hud" style="display:none;">
+      <div id="team-score-bar"></div>
       <div id="kill-feed"></div>
       <div id="match-timer"></div>
       <div id="scoreboard" style="display:none;"></div>
       <div id="respawn-countdown" style="display:none;"></div>
+      <div id="shuffle-notification" style="display:none;"></div>
     </div>
 
     <!-- Game over (multiplayer) -->

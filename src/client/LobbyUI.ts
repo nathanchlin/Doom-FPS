@@ -80,11 +80,28 @@ export class LobbyUI {
     this.killTargetEl.value = String(state.settings.killTarget);
     this.timeLimitEl.value = String(state.settings.timeLimit);
 
-    this.playersEl.innerHTML = state.players.map(p => {
-      const hostBadge = p.isHost ? ' (主机)' : '';
-      const readyBadge = p.ready ? ' ✓ 就绪' : ' ○ 未就绪';
-      return `<div class="lobby-player">${p.name}${hostBadge}${readyBadge}</div>`;
-    }).join('');
+    // Two-column team display
+    const redPlayers = state.players.filter(p => p.team === 'red');
+    const bluePlayers = state.players.filter(p => p.team === 'blue');
+
+    const renderPlayer = (p: typeof state.players[0]) => {
+      const hostBadge = p.isHost ? ' <span class="lobby-badge-host">(主机)</span>' : '';
+      const botBadge = p.isBot ? ' <span class="lobby-badge-bot">[BOT]</span>' : '';
+      const readyBadge = p.isBot ? '' : (p.ready ? ' <span class="lobby-ready-mark">✓</span>' : ' <span class="lobby-not-ready">○</span>');
+      return `<div class="lobby-player">${p.name}${hostBadge}${botBadge}${readyBadge}</div>`;
+    };
+
+    this.playersEl.innerHTML =
+      `<div class="lobby-teams">` +
+        `<div class="lobby-team lobby-team-red">` +
+          `<div class="lobby-team-header" style="color:#cc3333">RED</div>` +
+          redPlayers.map(renderPlayer).join('') +
+        `</div>` +
+        `<div class="lobby-team lobby-team-blue">` +
+          `<div class="lobby-team-header" style="color:#3366cc">BLUE</div>` +
+          bluePlayers.map(renderPlayer).join('') +
+        `</div>` +
+      `</div>`;
 
     this.titleEl.textContent = `房间 (${state.players.length}/8)`;
   }

@@ -539,17 +539,34 @@ button:hover {
   align-items: center; justify-content: center;
   background: rgba(0,0,0,0.85); z-index: 100;
 }
-#lobby .panel { min-width: 320px; }
+#lobby .panel { min-width: 420px; }
 .lobby-ip {
   padding: 8px 12px; margin-bottom: 10px;
   background: rgba(255,255,255,0.05); border: 1px solid #444;
   border-radius: 4px; font-size: 13px; color: #aaffaa;
   text-align: center; line-height: 1.6;
 }
-.lobby-player {
-  padding: 6px 0; border-bottom: 1px solid #333;
-  font-size: 14px; color: #ccc;
+.lobby-teams {
+  display: flex; gap: 16px; margin: 8px 0;
 }
+.lobby-team {
+  flex: 1; border: 1px solid #444; border-radius: 4px;
+  padding: 8px; min-height: 120px;
+}
+.lobby-team-red { border-color: #662222; background: rgba(204,51,51,0.08); }
+.lobby-team-blue { border-color: #223366; background: rgba(51,102,204,0.08); }
+.lobby-team-header {
+  font-size: 14px; font-weight: bold; letter-spacing: 3px;
+  text-align: center; margin-bottom: 6px;
+  padding-bottom: 4px; border-bottom: 1px solid #444;
+}
+.lobby-player {
+  padding: 4px 0; font-size: 13px; color: #ccc;
+}
+.lobby-badge-host { color: #ffd700; font-size: 11px; }
+.lobby-badge-bot { color: #888; font-size: 11px; }
+.lobby-ready-mark { color: #44cc44; }
+.lobby-not-ready { color: #888; }
 #lobby-settings {
   margin: 12px 0; display: flex; gap: 16px;
 }
@@ -569,38 +586,72 @@ button:hover {
 /* ─── Multiplayer HUD ─── */
 #mp-hud { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
 #kill-feed {
-  position: absolute; top: 10px; right: 10px;
+  position: absolute; top: 50px; right: 10px;
   text-align: right; font-size: 13px;
 }
 .kill-entry {
-  color: #ff6644; background: rgba(0,0,0,0.5);
+  color: #fff; background: rgba(0,0,0,0.5);
   padding: 4px 10px; margin: 2px 0; border-radius: 3px;
   animation: fadeIn 0.2s;
 }
+.kill-name { font-weight: bold; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-#match-timer {
-  position: absolute; top: 10px; left: 50%;
+
+/* Team score bar */
+#team-score-bar {
+  position: absolute; top: 8px; left: 50%;
   transform: translateX(-50%);
-  font-size: 20px; color: #fff;
+  font-size: 22px; font-weight: bold;
+  font-family: monospace; letter-spacing: 2px;
+  background: rgba(0,0,0,0.6);
+  padding: 6px 20px; border-radius: 4px;
+  display: flex; gap: 12px; align-items: center;
+}
+.team-red { color: #cc3333; }
+.team-blue { color: #3366cc; }
+.team-vs { color: #888; font-size: 16px; }
+
+#match-timer {
+  position: absolute; top: 44px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px; color: #aaa;
   text-shadow: 0 0 4px rgba(0,0,0,0.8);
   font-family: monospace;
 }
+
 #scoreboard {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(0,0,0,0.8); padding: 20px;
-  border: 1px solid #555; min-width: 300px;
+  background: rgba(0,0,0,0.85); padding: 20px;
+  border: 1px solid #555; min-width: 320px;
   border-radius: 6px;
+}
+.sb-team-header {
+  font-size: 14px; font-weight: bold; letter-spacing: 2px;
+  padding: 8px 0 4px; border-bottom: 1px solid #444;
 }
 .sb-row {
   display: flex; justify-content: space-between;
-  padding: 4px 0; color: #ccc; font-size: 14px;
+  padding: 4px 0; font-size: 14px;
 }
+.sb-bot { opacity: 0.5; font-size: 11px; }
+.sb-divider { height: 1px; background: #555; margin: 8px 0; }
+
 #respawn-countdown {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-size: 32px; color: #ff4444;
   text-shadow: 0 0 10px rgba(255,0,0,0.5);
+}
+
+/* Shuffle notification */
+#shuffle-notification {
+  position: absolute; top: 35%; left: 50%;
+  transform: translateX(-50%);
+  font-size: 28px; font-weight: bold;
+  color: #ffd700; letter-spacing: 4px;
+  text-shadow: 0 0 12px rgba(255,215,0,0.6);
+  transition: opacity 0.5s ease;
 }
 
 /* ─── MP Game Over ─── */

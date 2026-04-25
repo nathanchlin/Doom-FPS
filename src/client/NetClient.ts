@@ -11,6 +11,7 @@ import type {
   GameOverMessage,
   PickupTakenMessage,
   PickupSpawnedMessage,
+  TeamsShuffledMessage,
 } from '../shared/protocol';
 
 export type NetEventMap = {
@@ -26,6 +27,7 @@ export type NetEventMap = {
   player_left: { id: number; name: string };
   pickup_taken: PickupTakenMessage;
   pickup_spawned: PickupSpawnedMessage;
+  teams_shuffled: TeamsShuffledMessage;
   disconnected: undefined;
 };
 

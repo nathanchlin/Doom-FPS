@@ -1,6 +1,11 @@
 import * as THREE from 'three';
-import type { PlayerState } from '../shared/protocol';
+import type { PlayerState, Team } from '../shared/protocol';
 import { InterpolationBuffer, lerp, lerpAngle } from './Interpolation';
+
+const TEAM_COLORS: Record<Team, { body: number; head: number }> = {
+  red:  { body: 0xcc3333, head: 0xdd5555 },
+  blue: { body: 0x3366cc, head: 0x4488dd },
+};
 
 /**
  * Third-person model for other players visible in the scene.
@@ -18,6 +23,7 @@ export class RemotePlayer {
   readonly interp = new InterpolationBuffer<PlayerState>();
   alive = true;
   id: number;
+  team: Team = 'red';
 
   constructor(id: number, name: string, scene: THREE.Scene) {
     this.id = id;
@@ -75,6 +81,14 @@ export class RemotePlayer {
   pushState(state: PlayerState): void {
     this.interp.push(state);
     this.alive = state.alive;
+
+    // Team color
+    if (state.team !== this.team) {
+      this.team = state.team;
+      const tc = TEAM_COLORS[state.team];
+      this.bodyMat.color.setHex(tc.body);
+      this.headMat.color.setHex(tc.head);
+    }
 
     // Invincibility glow
     if (state.invincible) {

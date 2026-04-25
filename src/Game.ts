@@ -20,7 +20,7 @@ import { RemotePlayer } from './client/RemotePlayer';
 import { MultiplayerHud } from './client/MultiplayerHud';
 import { LobbyUI } from './client/LobbyUI';
 import { generateMaze as generateMazeSeeded } from './shared/maze';
-import { KEY, type SnapshotMessage, type PlayerState } from './shared/protocol';
+import { KEY, type SnapshotMessage, type PlayerState, type Team, type TeamScores } from './shared/protocol';
 
 type GameState = 'exploring' | 'in_room' | 'dead';
 
@@ -76,6 +76,8 @@ export class Game {
   private mpRespawnTimer = -1;
   private pickupMeshes: Map<number, THREE.Mesh> = new Map();
   private pickupKinds: Map<number, 'health' | 'ammo'> = new Map();
+  private localTeam: Team = 'red';
+  private teamScores: TeamScores = { red: 0, blue: 0 };
 
   constructor(container: HTMLElement) {
     this.engine = new Engine(container);
@@ -183,6 +185,7 @@ export class Game {
     });
 
     this.net.on('kill', (msg) => {
+      // Find killer and victim team for colored kill feed
       this.mpHud!.addKillFeedEntry(msg);
       if (msg.victimId === this.myId) {
         this.mpRespawnTimer = 3;
@@ -208,8 +211,23 @@ export class Game {
       const el = document.getElementById('mp-gameover')!;
       const winner = document.getElementById('mp-winner')!;
       const sb = document.getElementById('mp-scoreboard-final')!;
-      winner.textContent = `${msg.winnerName} 获胜！`;
-      sb.innerHTML = msg.scoreboard
+
+      // Team-based game over
+      if (msg.winnerTeam) {
+        const teamName = msg.winnerTeam === 'red' ? 'RED' : 'BLUE';
+        const teamColor = msg.winnerTeam === 'red' ? '#cc3333' : '#3366cc';
+        winner.innerHTML = `<span style="color:${teamColor}">${teamName} TEAM</span> 获胜！`;
+      } else {
+        winner.textContent = '平局！';
+      }
+
+      // Team scores line
+      const tsLine = `<div style="font-size:18px;margin-bottom:12px;">` +
+        `<span style="color:#cc3333">RED ${msg.teamScores.red}</span>` +
+        ` — ` +
+        `<span style="color:#3366cc">${msg.teamScores.blue} BLUE</span></div>`;
+
+      sb.innerHTML = tsLine + msg.scoreboard
         .map((p, i) => `<div>#${i + 1} ${p.name} — ${p.kills} 击杀 / ${p.deaths} 死亡</div>`)
         .join('');
       el.style.display = 'flex';
@@ -257,6 +275,16 @@ export class Game {
     this.net.on('disconnected', () => {
       alert('与主机断开连接');
       window.location.reload();
+    });
+
+    this.net.on('teams_shuffled', (msg) => {
+      // Update local team
+      const myEntry = msg.players.find((p: { id: number; team: Team }) => p.id === this.myId);
+      if (myEntry) {
+        this.localTeam = myEntry.team;
+      }
+      // Show shuffle notification
+      this.mpHud?.showShuffleNotification();
     });
   }
 
@@ -330,6 +358,14 @@ export class Game {
 
   isMultiplayer(): boolean {
     return this.mode === 'multiplayer';
+  }
+
+  getLocalTeam(): string {
+    return this.localTeam;
+  }
+
+  getTeamScores(): TeamScores {
+    return this.teamScores;
   }
 
   private bindActions(): void {
@@ -672,11 +708,12 @@ export class Game {
 
     // 3. Process latest snapshot
     const snap = this.lastSnapshot;
+    let me: PlayerState | undefined;
     if (snap) {
       this.lastSnapshot = null;
 
       // Update local player from server
-      const me = snap.players.find((p: PlayerState) => p.id === this.myId);
+      me = snap.players.find((p: PlayerState) => p.id === this.myId);
       if (me) {
         const dx = me.x - this.player.position.x;
         const dz = me.z - this.player.position.z;
@@ -728,8 +765,15 @@ export class Game {
         }
       }
 
-      // Timer
+      // Timer + team scores
       this.mpHud?.setTimeRemaining(snap.timeRemaining);
+      this.teamScores = snap.teamScores;
+      this.mpHud?.setTeamScores(snap.teamScores);
+
+      // Update local team from own state
+      if (me) {
+        this.localTeam = me.team;
+      }
     }
 
     // 4. Interpolate remote players + enemy death animations + pickup bob
@@ -755,6 +799,8 @@ export class Game {
     // 6. Scoreboard (Tab key)
     if (this.input.isDown('tab')) {
       const allPlayers: PlayerState[] = [];
+      // Include local player state
+      if (me) allPlayers.push(me);
       for (const rp of this.remotePlayers.values()) {
         const latest = rp.interp.getLatest();
         if (latest) allPlayers.push(latest);
