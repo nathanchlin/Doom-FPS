@@ -8,15 +8,21 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "host": "tsx src/server/main.ts",
+    "build:server": "vite build --config vite.server.config.ts",
+    "start": "node dist-server/main.mjs"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "@types/three": "^0.184.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.21.0",
     "typescript": "~6.0.2",
     "vite": "^8.0.10"
   },
   "dependencies": {
-    "three": "^0.184.0"
+    "three": "^0.184.0",
+    "ws": "^8.20.0"
   }
 }
