@@ -65,6 +65,8 @@ export class Hud {
   }
 
   hideInteract(): void {
+    // Don't hide if a loot notification is active
+    if (this.lootTimer) return;
     this.interactPrompt.style.display = 'none';
   }
 
