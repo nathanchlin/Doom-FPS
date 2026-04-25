@@ -2,11 +2,9 @@ import * as THREE from 'three';
 import { CONFIG } from './config';
 import type { MazeData } from './Maze';
 import { DIR, cellToWorld } from './Maze';
-
-export interface AABB2D {
-  minX: number; maxX: number;
-  minZ: number; maxZ: number;
-}
+import { resolveCircleVsAABBs, hasLineOfSight as sharedLOS } from './shared/collision';
+import type { AABB2D } from './shared/collision';
+export type { AABB2D };
 
 export interface CollisionProvider {
   resolveCircleVsWalls(x: number, z: number, radius: number): { x: number; z: number };
@@ -222,70 +220,12 @@ export class Level {
   }
 
   resolveCircleVsWalls(x: number, z: number, radius: number): { x: number; z: number } {
-    let rx = x, rz = z;
-    for (const w of this.walls) {
-      const cx = Math.max(w.minX, Math.min(rx, w.maxX));
-      const cz = Math.max(w.minZ, Math.min(rz, w.maxZ));
-      const dx = rx - cx;
-      const dz = rz - cz;
-      const distSq = dx * dx + dz * dz;
-      if (distSq < radius * radius && distSq > 0) {
-        const dist = Math.sqrt(distSq);
-        const push = radius - dist;
-        rx += (dx / dist) * push;
-        rz += (dz / dist) * push;
-      } else if (distSq === 0) {
-        const edges = [
-          { axis: 'x' as const, sign: -1, dist: rx - w.minX },
-          { axis: 'x' as const, sign: 1, dist: w.maxX - rx },
-          { axis: 'z' as const, sign: -1, dist: rz - w.minZ },
-          { axis: 'z' as const, sign: 1, dist: w.maxZ - rz },
-        ];
-        edges.sort((a, b) => a.dist - b.dist);
-        const e = edges[0]!;
-        if (e.axis === 'x') rx += e.sign * (e.dist + radius);
-        else rz += e.sign * (e.dist + radius);
-      }
-    }
-    return { x: rx, z: rz };
+    return resolveCircleVsAABBs(x, z, radius, this.walls);
   }
 
   /** Ray-vs-AABB line-of-sight check in XZ plane */
   hasLineOfSight(ax: number, az: number, bx: number, bz: number): boolean {
-    const dx = bx - ax;
-    const dz = bz - az;
-    for (const w of this.walls) {
-      // Check if segment (ax,az)→(bx,bz) intersects AABB w
-      let tmin = 0, tmax = 1;
-
-      if (Math.abs(dx) > 1e-8) {
-        const t1 = (w.minX - ax) / dx;
-        const t2 = (w.maxX - ax) / dx;
-        const tlo = Math.min(t1, t2);
-        const thi = Math.max(t1, t2);
-        tmin = Math.max(tmin, tlo);
-        tmax = Math.min(tmax, thi);
-        if (tmin > tmax) continue;
-      } else {
-        if (ax < w.minX || ax > w.maxX) continue;
-      }
-
-      if (Math.abs(dz) > 1e-8) {
-        const t1 = (w.minZ - az) / dz;
-        const t2 = (w.maxZ - az) / dz;
-        const tlo = Math.min(t1, t2);
-        const thi = Math.max(t1, t2);
-        tmin = Math.max(tmin, tlo);
-        tmax = Math.min(tmax, thi);
-        if (tmin > tmax) continue;
-      } else {
-        if (az < w.minZ || az > w.maxZ) continue;
-      }
-
-      // Segment intersects this wall
-      return false;
-    }
-    return true;
+    return sharedLOS(ax, az, bx, bz, this.walls);
   }
 
   dispose(scene: THREE.Scene): void {
