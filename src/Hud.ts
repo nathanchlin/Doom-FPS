@@ -68,6 +68,23 @@ export class Hud {
     this.interactPrompt.style.display = 'none';
   }
 
+  private lootTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Show loot pickup notification, auto-hides after 1.5s */
+  showLoot(ammo: number, health: number): void {
+    const parts: string[] = [];
+    if (ammo > 0) parts.push(`AMMO +${ammo}`);
+    if (health > 0) parts.push(`HP +${health}`);
+    if (parts.length === 0) return;
+    this.interactPrompt.textContent = parts.join('  ');
+    this.interactPrompt.style.display = '';
+    if (this.lootTimer) clearTimeout(this.lootTimer);
+    this.lootTimer = setTimeout(() => {
+      this.interactPrompt.style.display = 'none';
+      this.lootTimer = null;
+    }, 1500);
+  }
+
   /** Show floor number announcement (auto-hides after animation) */
   showFloorTransition(floor: number): void {
     this.floorText.textContent = `FLOOR ${floor}`;

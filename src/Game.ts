@@ -194,7 +194,7 @@ export class Game {
       this.player.hp = Math.min(this.player.hp + loot.health, CONFIG.player.maxHealth);
       this.hud.setAmmo(this.player.ammo);
       this.hud.setHp(this.player.hp);
-      this.hud.hideInteract();
+      this.hud.showLoot(loot.ammo, loot.health);
       return;
     }
 
