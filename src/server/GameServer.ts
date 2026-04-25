@@ -32,7 +32,6 @@ import { ServerPlayer, MAX_HP, MAX_AMMO } from './ServerPlayer';
 import { ServerEnemy, type EnemyType } from './ServerEnemy';
 import { WeaponCooldown, processShot } from './ServerWeapon';
 import {
-  createPickups,
   updatePickups,
   tryClaimPickup,
   HEALTH_AMOUNT,
@@ -64,6 +63,7 @@ export class GameServer {
   private players = new Map<number, ServerPlayer>();
   private enemies: ServerEnemy[] = [];
   private pickups: ServerPickup[] = [];
+  private nextPickupId = 0;
   private walls: AABB2D[] = [];
   private weaponCooldowns = new WeaponCooldown();
   private rng: RNG = Math.random;
@@ -204,8 +204,9 @@ export class GameServer {
       enemySpawns.push({ id: i, x: pos.x, z: pos.z, enemyType: eType });
     }
 
-    // Create pickups
-    this.pickups = createPickups(this.corridorWorldPos);
+    // Reset pickups (drops spawn on enemy kill, not pre-placed)
+    this.pickups = [];
+    this.nextPickupId = 0;
 
     // Reset weapon cooldowns
     this.weaponCooldowns = new WeaponCooldown();
@@ -255,6 +256,7 @@ export class GameServer {
       this.weaponCooldowns.fire(player.id);
 
       const result = processShot(player, alivePlayers, this.enemies);
+      console.log(`[SHOT] player=${player.name} pos=(${player.x.toFixed(1)},${player.y.toFixed(1)},${player.z.toFixed(1)}) yaw=${player.yaw.toFixed(2)} pitch=${player.pitch.toFixed(2)} → ${result ? `hit ${result.targetType} #${result.targetId}` : 'miss'} enemies=${this.enemies.filter(e => e.state !== 'dead').length}`);
       if (result && result.hit) {
         if (result.targetType === 'player') {
           const target = this.players.get(result.targetId);
@@ -303,6 +305,28 @@ export class GameServer {
               killed,
             };
             this.broadcast(hitMsg);
+
+            // Drop a pickup on enemy death
+            if (killed) {
+              const dropKind: 'health' | 'ammo' = this.rng() < 0.5 ? 'health' : 'ammo';
+              const drop: ServerPickup = {
+                id: this.nextPickupId++,
+                x: enemy.x,
+                z: enemy.z,
+                kind: dropKind,
+                active: true,
+                respawnTimer: 0,
+              };
+              this.pickups.push(drop);
+              const spawnMsg: PickupSpawnedMessage = {
+                type: 'pickup_spawned',
+                pickupId: drop.id,
+                x: drop.x,
+                z: drop.z,
+                kind: drop.kind,
+              };
+              this.broadcast(spawnMsg);
+            }
           }
         }
       }

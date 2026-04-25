@@ -74,6 +74,8 @@ export class Game {
   private inputSeq = 0;
   private lastSnapshot: SnapshotMessage | null = null;
   private mpRespawnTimer = -1;
+  private pickupMeshes: Map<number, THREE.Mesh> = new Map();
+  private pickupKinds: Map<number, 'health' | 'ammo'> = new Map();
 
   constructor(container: HTMLElement) {
     this.engine = new Engine(container);
@@ -114,6 +116,18 @@ export class Game {
       this.lobbyUI!.hide();
       this.sfx.unlock();
 
+      // Clean up singleplayer leftovers from initFloor(1) in constructor
+      for (const d of this.doors) d.dispose(this.engine.scene);
+      this.doors = [];
+      for (const e of this.corridorEnemies) e.dispose(this.engine.scene);
+      this.corridorEnemies = [];
+      for (const h of this.hazards) h.dispose(this.engine.scene);
+      this.hazards = [];
+      if (this.currentRoom) {
+        this.currentRoom.dispose(this.engine.scene);
+        this.currentRoom = null;
+      }
+
       // Generate maze from seed
       const mazeData = generateMazeSeeded(msg.floor, msg.mazeSeed);
       if (this.level) this.level.dispose(this.engine.scene);
@@ -140,6 +154,10 @@ export class Game {
       this.state = 'exploring';
       this.mpHud!.show();
       this.engine.start();
+
+      // Hide singleplayer-only HUD elements (doors, floor)
+      document.querySelector('.hud-top-left')?.setAttribute('style', 'display:none');
+      document.querySelector('.hud-top-right')?.setAttribute('style', 'display:none');
 
       // Show overlay — browser requires user gesture for pointer lock
       const overlay = document.getElementById('overlay')!;
@@ -196,6 +214,44 @@ export class Game {
         .join('');
       el.style.display = 'flex';
       this.input.exitPointerLock();
+    });
+
+    this.net.on('pickup_spawned', (msg) => {
+      // Create a glowing box at the drop location
+      const color = msg.kind === 'health' ? CONFIG.colors.pickupHealth : CONFIG.colors.pickupAmmo;
+      const geo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
+      const mat = new THREE.MeshStandardMaterial({
+        color,
+        emissive: color,
+        emissiveIntensity: 0.8,
+        roughness: 0.3,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(msg.x, 0.3, msg.z);
+      mesh.castShadow = true;
+      this.engine.scene.add(mesh);
+      this.pickupMeshes.set(msg.pickupId, mesh);
+      this.pickupKinds.set(msg.pickupId, msg.kind);
+    });
+
+    this.net.on('pickup_taken', (msg) => {
+      const mesh = this.pickupMeshes.get(msg.pickupId);
+      if (mesh) {
+        this.engine.scene.remove(mesh);
+        mesh.geometry.dispose();
+        (mesh.material as THREE.Material).dispose();
+        this.pickupMeshes.delete(msg.pickupId);
+      }
+      if (msg.playerId === this.myId) {
+        this.sfx.chestOpen();
+        const kind = this.pickupKinds.get(msg.pickupId);
+        if (kind === 'health') {
+          this.hud.showLoot(0, 25);
+        } else if (kind === 'ammo') {
+          this.hud.showLoot(15, 0);
+        }
+      }
+      this.pickupKinds.delete(msg.pickupId);
     });
 
     this.net.on('disconnected', () => {
@@ -279,6 +335,17 @@ export class Game {
   private bindActions(): void {
     // Click to shoot
     this.input.onMouseDown.push(() => {
+      if (this.mode === 'multiplayer') {
+        // Multiplayer: just play local SFX for feedback, server handles damage
+        if (this.player?.alive && this.player.ammo > 0) {
+          this.weaponModel.fire();
+          this.sfx.shoot();
+        } else if (this.player?.ammo === 0) {
+          this.sfx.empty();
+        }
+        return;
+      }
+      // Singleplayer: local raycast
       if (this.state !== 'exploring' && this.state !== 'in_room') return;
       const enemies = this.state === 'in_room' && this.currentRoom
         ? this.currentRoom.enemies
@@ -643,23 +710,20 @@ export class Game {
         }
       }
 
-      // Update enemies from snapshot (position only)
+      // Update enemies from snapshot
       for (const es of snap.enemies) {
         if (es.id < this.corridorEnemies.length) {
           const e = this.corridorEnemies[es.id]!;
           e.position.x = es.x;
           e.position.z = es.z;
-          e.group.position.set(es.x, 0, es.z);
+          e.group.position.set(es.x, e.group.position.y, es.z);
           e.group.rotation.y = es.yaw;
           if (es.state === 'dead' && e.alive) {
-            e.alive = false;
-            e.state = 'dead';
+            e.killVisual();
           } else if (es.state !== 'dead' && !e.alive) {
-            e.alive = true;
-            e.state = es.state;
+            e.reviveVisual();
             e.hp = es.hp;
-            e.group.rotation.x = 0;
-            e.group.position.y = 0;
+            e.group.position.set(es.x, 0, es.z);
           }
         }
       }
@@ -668,9 +732,18 @@ export class Game {
       this.mpHud?.setTimeRemaining(snap.timeRemaining);
     }
 
-    // 4. Interpolate remote players
+    // 4. Interpolate remote players + enemy death animations + pickup bob
     for (const rp of this.remotePlayers.values()) {
       rp.update(dt);
+    }
+    for (const e of this.corridorEnemies) {
+      e.updateVisual(dt);
+    }
+    // Bob pickup meshes
+    const bobT = performance.now() * 0.003;
+    for (const mesh of this.pickupMeshes.values()) {
+      mesh.position.y = 0.3 + Math.sin(bobT + mesh.position.x) * 0.1;
+      mesh.rotation.y += dt * 2;
     }
 
     // 5. Respawn countdown

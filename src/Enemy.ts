@@ -193,6 +193,39 @@ export class Enemy {
     this.eyeMat.emissiveIntensity = 0;
   }
 
+  /** Trigger death visuals from external code (multiplayer). */
+  killVisual(): void {
+    if (!this.alive) return;
+    this.die();
+  }
+
+  /** Revive visuals (multiplayer enemy respawn). */
+  reviveVisual(): void {
+    this.alive = true;
+    this.state = 'idle';
+    this.deathTimer = 0;
+    this.group.rotation.x = 0;
+    this.group.position.y = 0;
+    const colorMap: Record<string, number> = {
+      standard: CONFIG.enemy.types.standard.color,
+      rusher: CONFIG.enemy.types.rusher.color,
+      tank: CONFIG.enemy.types.tank.color,
+      patrol: CONFIG.enemy.types.patrol.color,
+    };
+    this.bodyMat.color.setHex(colorMap[this.type] ?? 0xf0f0f0);
+    this.eyeMat.emissiveIntensity = 2.0;
+  }
+
+  /** Update only death animation (no AI). Used in multiplayer. */
+  updateVisual(dt: number): void {
+    if (!this.alive && this.deathTimer > 0) {
+      this.deathTimer -= dt;
+      const t = 1 - this.deathTimer / 1.5;
+      this.group.rotation.x = Math.min(Math.PI / 2, t * Math.PI / 2 * 1.5);
+      this.group.position.y = Math.max(-0.5, -t * 0.5);
+    }
+  }
+
   /**
    * Returns { shot, contactHit }
    * - shot: true if ranged attack hit this frame (standard/tank)
