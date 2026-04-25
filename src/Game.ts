@@ -140,7 +140,13 @@ export class Game {
       this.state = 'exploring';
       this.mpHud!.show();
       this.engine.start();
-      this.input.requestPointerLock();
+
+      // Show overlay — browser requires user gesture for pointer lock
+      const overlay = document.getElementById('overlay')!;
+      const startBtn = document.getElementById('start') as HTMLButtonElement;
+      startBtn.textContent = '点击开始战斗';
+      overlay.style.display = 'flex';
+      // Pointer lock will happen when user clicks the start button (handled in main.ts)
     });
 
     this.net.on('snapshot', (msg) => {
@@ -264,6 +270,10 @@ export class Game {
   start(): void {
     this.input.requestPointerLock();
     this.engine.start();
+  }
+
+  isMultiplayer(): boolean {
+    return this.mode === 'multiplayer';
   }
 
   private bindActions(): void {

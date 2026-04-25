@@ -540,6 +540,12 @@ button:hover {
   background: rgba(0,0,0,0.85); z-index: 100;
 }
 #lobby .panel { min-width: 320px; }
+.lobby-ip {
+  padding: 8px 12px; margin-bottom: 10px;
+  background: rgba(255,255,255,0.05); border: 1px solid #444;
+  border-radius: 4px; font-size: 13px; color: #aaffaa;
+  text-align: center; line-height: 1.6;
+}
 .lobby-player {
   padding: 6px 0; border-bottom: 1px solid #333;
   font-size: 14px; color: #ccc;

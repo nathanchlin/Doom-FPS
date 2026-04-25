@@ -25,7 +25,12 @@ document.getElementById('btn-singleplayer')!.addEventListener('click', () => {
 startBtn.addEventListener('click', () => {
   game.sfx.unlock();
   overlay.style.display = 'none';
-  game.start();
+  if (game.isMultiplayer()) {
+    // Engine already started by game_start handler, just lock pointer
+    game.input.requestPointerLock();
+  } else {
+    game.start();
+  }
 });
 
 // ─── Create Room (host connects to localhost) ───

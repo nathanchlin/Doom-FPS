@@ -11,6 +11,7 @@ export class LobbyUI {
   private titleEl: HTMLElement;
 
   private myId = -1;
+  private lobbyIpEl: HTMLElement;
 
   constructor(private net: NetClient) {
     this.lobbyEl = document.getElementById('lobby')!;
@@ -20,6 +21,7 @@ export class LobbyUI {
     this.killTargetEl = document.getElementById('lobby-kill-target') as HTMLSelectElement;
     this.timeLimitEl = document.getElementById('lobby-time-limit') as HTMLSelectElement;
     this.titleEl = document.getElementById('lobby-title')!;
+    this.lobbyIpEl = document.getElementById('lobby-ip')!;
 
     this.readyBtn.addEventListener('click', () => {
       this.net.send({ type: 'ready' });
@@ -49,6 +51,18 @@ export class LobbyUI {
   show(myId: number): void {
     this.myId = myId;
     this.lobbyEl.style.display = 'flex';
+
+    // Display connection info for other players to join
+    const host = window.location.hostname;
+    const port = window.location.port || '3000';
+    if (host === 'localhost' || host === '127.0.0.1') {
+      this.lobbyIpEl.innerHTML =
+        `<span>其他玩家访问终端显示的 LAN IP 加入</span>` +
+        `<br><span style="color:#888;font-size:12px">如: http://192.168.x.x:${port}</span>`;
+    } else {
+      this.lobbyIpEl.innerHTML =
+        `<span>其他玩家访问: <b>http://${host}:${port}</b></span>`;
+    }
   }
 
   hide(): void {
