@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { CONFIG } from './config';
 import type { Player } from './Player';
 import type { Enemy } from './Enemy';
 import type { WeaponModel } from './WeaponModel';
 import type { Sfx } from './Sfx';
+import { getWeaponConfig, type WeaponType, type WeaponConfig } from './weapons';
 
 export interface HitResult {
   enemy: Enemy;
@@ -12,32 +12,55 @@ export interface HitResult {
 }
 
 /**
- * Weapon — manages fire rate, ammo, hitscan logic, and integrates with
- * the view-model + sound.
- *
- * Hitscan: a single ray from the camera origin along the look direction;
- * tested against enemy bounding spheres. First hit wins. Range-limited.
+ * Weapon — manages fire rate, ammo, hitscan logic.
+ * Supports multiple weapon types with different stats.
+ * Shotgun fires multiple spread rays; rifle/sniper fire single rays.
  */
 export class Weapon {
   private cooldown = 0;
   private readonly raycaster = new THREE.Raycaster();
+  private config: WeaponConfig;
+  private damageMultiplier = 1.0;
 
   constructor(
     private readonly player: Player,
     private readonly model: WeaponModel,
     private readonly sfx: Sfx,
-  ) {}
+  ) {
+    this.config = getWeaponConfig('rifle');
+  }
 
   reset(): void {
     this.cooldown = 0;
+  }
+
+  getConfig(): WeaponConfig {
+    return this.config;
+  }
+
+  /** Switch to a new weapon type. Returns new magazine size for ammo reset. */
+  switchWeapon(type: WeaponType, ammoBonus: number): number {
+    this.config = getWeaponConfig(type);
+    this.cooldown = 0;
+    return this.config.magazine + ammoBonus;
+  }
+
+  setDamageMultiplier(mult: number): void {
+    this.damageMultiplier = mult;
   }
 
   canFire(): boolean {
     return this.cooldown <= 0 && this.player.ammo > 0 && this.player.alive;
   }
 
+  getEffectiveDamage(): number {
+    return Math.round(this.config.damage * this.damageMultiplier);
+  }
+
   /**
-   * Attempt to fire; returns the hit enemy (if any) or null.
+   * Attempt to fire; returns the first hit enemy (if any) or null.
+   * Shotgun fires multiple pellets — each can hit independently.
+   * Returns the first hit for HUD feedback.
    */
   tryFire(enemies: Enemy[]): HitResult | null {
     if (!this.canFire()) {
@@ -45,19 +68,17 @@ export class Weapon {
       return null;
     }
 
-    this.cooldown = CONFIG.weapon.fireRate;
+    this.cooldown = this.config.fireRate;
     this.player.ammo -= 1;
-    this.player.addRecoil(CONFIG.weapon.recoilKick);
+    this.player.addRecoil(this.config.recoilKick);
     this.model.fire();
     this.sfx.shoot();
 
-    // Hitscan
     const origin = this.player.camera.position.clone();
-    const dir = this.player.getLookDir();
-    this.raycaster.set(origin, dir);
-    this.raycaster.far = CONFIG.weapon.maxRange;
+    const baseDir = this.player.getLookDir();
+    const effectiveDmg = this.getEffectiveDamage();
 
-    // Build a flat list of alive enemy meshes and pair with Enemy refs
+    // Build enemy mesh list
     const meshes: THREE.Object3D[] = [];
     const meshToEnemy = new Map<number, Enemy>();
     for (const e of enemies) {
@@ -66,20 +87,46 @@ export class Weapon {
       meshToEnemy.set(e.hitbox.id, e);
     }
 
-    const hits = this.raycaster.intersectObjects(meshes, false);
-    if (hits.length > 0) {
-      const first = hits[0]!;
-      const enemy = meshToEnemy.get(first.object.id);
-      if (enemy) {
-        enemy.takeDamage(CONFIG.weapon.damage);
-        return {
-          enemy,
-          distance: first.distance,
-          point: first.point.clone(),
-        };
+    let firstHit: HitResult | null = null;
+
+    for (let p = 0; p < this.config.pellets; p++) {
+      let dir: THREE.Vector3;
+      if (this.config.spread > 0) {
+        // Random spread within cone
+        dir = baseDir.clone();
+        const up = new THREE.Vector3(0, 1, 0);
+        const right = new THREE.Vector3().crossVectors(baseDir, up).normalize();
+        const actualUp = new THREE.Vector3().crossVectors(right, baseDir).normalize();
+        const angle = (Math.random() - 0.5) * 2 * this.config.spread;
+        const angle2 = (Math.random() - 0.5) * 2 * this.config.spread;
+        dir.add(right.multiplyScalar(Math.sin(angle)));
+        dir.add(actualUp.multiplyScalar(Math.sin(angle2)));
+        dir.normalize();
+      } else {
+        dir = baseDir;
+      }
+
+      this.raycaster.set(origin, dir);
+      this.raycaster.far = this.config.maxRange;
+
+      const hits = this.raycaster.intersectObjects(meshes, false);
+      if (hits.length > 0) {
+        const first = hits[0]!;
+        const enemy = meshToEnemy.get(first.object.id);
+        if (enemy) {
+          enemy.takeDamage(effectiveDmg);
+          if (!firstHit) {
+            firstHit = {
+              enemy,
+              distance: first.distance,
+              point: first.point.clone(),
+            };
+          }
+        }
       }
     }
-    return null;
+
+    return firstHit;
   }
 
   update(dt: number): void {
