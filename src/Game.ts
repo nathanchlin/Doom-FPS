@@ -182,6 +182,11 @@ export class Game {
         this.hud.flashHitMarker();
         this.sfx.hit();
       }
+      // Enemy hit flash
+      if (msg.targetType === 'enemy') {
+        const e = this.corridorEnemies[msg.targetId];
+        if (e) e.hitFlash();
+      }
     });
 
     this.net.on('kill', (msg) => {
@@ -228,7 +233,7 @@ export class Game {
         `<span style="color:#3366cc">${msg.teamScores.blue} BLUE</span></div>`;
 
       sb.innerHTML = tsLine + msg.scoreboard
-        .map((p, i) => `<div>#${i + 1} ${p.name} — ${p.kills} 击杀 / ${p.deaths} 死亡</div>`)
+        .map((p, i) => `<div>#${i + 1} ${p.name} — <b>${p.score}分</b> (${p.kills}杀/${p.deaths}死)</div>`)
         .join('');
       el.style.display = 'flex';
       this.input.exitPointerLock();
@@ -753,22 +758,23 @@ export class Game {
           const e = this.corridorEnemies[es.id]!;
           e.position.x = es.x;
           e.position.z = es.z;
+          e.hp = es.hp;
           e.group.position.set(es.x, e.group.position.y, es.z);
           e.group.rotation.y = es.yaw;
           if (es.state === 'dead' && e.alive) {
             e.killVisual();
           } else if (es.state !== 'dead' && !e.alive) {
             e.reviveVisual();
-            e.hp = es.hp;
             e.group.position.set(es.x, 0, es.z);
           }
         }
       }
 
-      // Timer + team scores
+      // Timer + team scores + leaderboard
       this.mpHud?.setTimeRemaining(snap.timeRemaining);
       this.teamScores = snap.teamScores;
       this.mpHud?.setTeamScores(snap.teamScores);
+      this.mpHud?.updateLeaderboard(snap.players);
 
       // Update local team from own state
       if (me) {
@@ -796,21 +802,7 @@ export class Game {
       this.mpHud?.showRespawnCountdown(this.mpRespawnTimer);
     }
 
-    // 6. Scoreboard (Tab key)
-    if (this.input.isDown('tab')) {
-      const allPlayers: PlayerState[] = [];
-      // Include local player state
-      if (me) allPlayers.push(me);
-      for (const rp of this.remotePlayers.values()) {
-        const latest = rp.interp.getLatest();
-        if (latest) allPlayers.push(latest);
-      }
-      this.mpHud?.showScoreboard(allPlayers);
-    } else {
-      this.mpHud?.hideScoreboard();
-    }
-
-    // 7. Wall collision for local player
+    // 6. Wall collision for local player
     if (this.level && this.player.alive) {
       const resolved = this.level.resolveCircleVsWalls(
         this.player.position.x,

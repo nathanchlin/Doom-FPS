@@ -9,6 +9,7 @@ import {
   type ClientMessage,
   type Team,
 } from '../shared/protocol';
+import { getBotName } from './BotPlayer';
 
 export interface LobbyPlayer {
   id: number;
@@ -127,18 +128,41 @@ export class Lobby {
   }
 
   private broadcastLobbyState(): void {
-    // Pre-assign teams for display: alternate red/blue
     const playerArr = Array.from(this.players.values());
-    const msg: LobbyStateMessage = {
-      type: 'lobby_state',
-      players: playerArr.map((p, i) => ({
+
+    // Build player entries: humans first, then bot placeholders to fill to 8
+    const entries: LobbyStateMessage['players'] = [];
+
+    // Humans — alternate red/blue
+    for (let i = 0; i < playerArr.length; i++) {
+      const p = playerArr[i]!;
+      entries.push({
         id: p.id,
         name: p.name,
         ready: p.ready,
         isHost: p.isHost,
         team: (i % 2 === 0 ? 'red' : 'blue') as Team,
         isBot: false,
-      })),
+      });
+    }
+
+    // Bot placeholders to fill to 8
+    const botsNeeded = Math.max(0, 8 - playerArr.length);
+    for (let i = 0; i < botsNeeded; i++) {
+      const globalIdx = playerArr.length + i;
+      entries.push({
+        id: -(i + 1), // negative IDs for placeholders
+        name: getBotName(i),
+        ready: true,
+        isHost: false,
+        team: (globalIdx % 2 === 0 ? 'red' : 'blue') as Team,
+        isBot: true,
+      });
+    }
+
+    const msg: LobbyStateMessage = {
+      type: 'lobby_state',
+      players: entries,
       settings: {
         killTarget: this.settings.killTarget,
         timeLimit: this.settings.timeLimit,

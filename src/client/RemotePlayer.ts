@@ -28,8 +28,8 @@ export class RemotePlayer {
   constructor(id: number, name: string, scene: THREE.Scene) {
     this.id = id;
 
-    // Body
-    this.bodyMat = new THREE.MeshStandardMaterial({ color: 0x4488cc, roughness: 0.4 });
+    // Body — default red team color, updated by pushState
+    this.bodyMat = new THREE.MeshStandardMaterial({ color: TEAM_COLORS.red.body, roughness: 0.4 });
     const bodyGeo = new THREE.BoxGeometry(0.6, 1.5, 0.4);
     this.body = new THREE.Mesh(bodyGeo, this.bodyMat);
     this.body.position.y = 0.75;
@@ -44,7 +44,7 @@ export class RemotePlayer {
     this.group.add(wire);
 
     // Head
-    this.headMat = new THREE.MeshStandardMaterial({ color: 0x66aadd, roughness: 0.3 });
+    this.headMat = new THREE.MeshStandardMaterial({ color: TEAM_COLORS.red.head, roughness: 0.3 });
     const headGeo = new THREE.BoxGeometry(0.35, 0.35, 0.35);
     this.head = new THREE.Mesh(headGeo, this.headMat);
     this.head.position.y = 1.675;
@@ -69,7 +69,7 @@ export class RemotePlayer {
     ctx.fillText(name, 128, 40);
 
     const texture = new THREE.CanvasTexture(canvas);
-    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+    const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: true });
     this.nameSprite = new THREE.Sprite(spriteMat);
     this.nameSprite.scale.set(2, 0.5, 1);
     this.nameSprite.position.y = 2.2;
@@ -82,13 +82,11 @@ export class RemotePlayer {
     this.interp.push(state);
     this.alive = state.alive;
 
-    // Team color
-    if (state.team !== this.team) {
-      this.team = state.team;
-      const tc = TEAM_COLORS[state.team];
-      this.bodyMat.color.setHex(tc.body);
-      this.headMat.color.setHex(tc.head);
-    }
+    // Team color — always update on team change
+    this.team = state.team;
+    const tc = TEAM_COLORS[state.team];
+    this.bodyMat.color.setHex(tc.body);
+    this.headMat.color.setHex(tc.head);
 
     // Invincibility glow
     if (state.invincible) {

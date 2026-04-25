@@ -34,6 +34,7 @@ export class ServerPlayer {
   alive = true;
   kills = 0;
   deaths = 0;
+  score = 0;
 
   invincible = false;
   invincibleTimer = 0;

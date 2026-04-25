@@ -156,6 +156,7 @@
         <div class="join-row">
           <input id="player-name" type="text" placeholder="你的昵称" value="Player" />
         </div>
+        <a id="btn-download-server" href="doom-server.zip" download class="download-btn">下载服务器程序</a>
       </div>
     </div>
 
@@ -166,10 +167,10 @@
         <div id="lobby-ip" class="lobby-ip"></div>
         <div id="lobby-players"></div>
         <div id="lobby-settings">
-          <label>团队击杀目标: <select id="lobby-kill-target">
-            <option value="10">10</option>
-            <option value="20" selected>20</option>
-            <option value="30">30</option>
+          <label>团队积分目标: <select id="lobby-kill-target">
+            <option value="500">500</option>
+            <option value="1000" selected>1000</option>
+            <option value="2000">2000</option>
           </select></label>
           <label>时间限制: <select id="lobby-time-limit">
             <option value="300">5 分钟</option>
@@ -187,7 +188,7 @@
       <div id="team-score-bar"></div>
       <div id="kill-feed"></div>
       <div id="match-timer"></div>
-      <div id="scoreboard" style="display:none;"></div>
+      <div id="mp-leaderboard"></div>
       <div id="respawn-countdown" style="display:none;"></div>
       <div id="shuffle-notification" style="display:none;"></div>
     </div>

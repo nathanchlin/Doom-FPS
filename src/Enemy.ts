@@ -164,6 +164,20 @@ export class Enemy {
     scene.add(this.group);
   }
 
+  /** Flash body color to show hit (visual only, no HP change). Used in multiplayer. */
+  hitFlash(): void {
+    if (!this.alive) return;
+    this.bodyMat.color.setHex(0xaaaaaa);
+    setTimeout(() => {
+      if (this.alive) this.bodyMat.color.setHex(
+        this.type === 'standard' ? CONFIG.enemy.types.standard.color :
+        this.type === 'rusher' ? CONFIG.enemy.types.rusher.color :
+        this.type === 'patrol' ? CONFIG.enemy.types.patrol.color :
+        CONFIG.enemy.types.tank.color,
+      );
+    }, 80);
+  }
+
   takeDamage(amount: number): boolean {
     if (!this.alive) return false;
     this.hp -= amount;

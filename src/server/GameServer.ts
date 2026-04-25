@@ -272,7 +272,7 @@ export class GameServer {
     const allPlayersArr = Array.from(this.players.values());
     for (const player of this.players.values()) {
       if (player instanceof BotPlayer) {
-        player.generateInput(dt, allPlayersArr, this.walls, this.teamManager, this.rng);
+        player.generateInput(dt, allPlayersArr, this.walls, this.teamManager, this.rng, this.enemies);
       }
     }
 
@@ -319,7 +319,11 @@ export class GameServer {
 
             if (killed) {
               player.kills++;
-              this.teamScores[player.team]++;
+              // Score: steal all victim's score
+              const stolen = target.score;
+              player.score += stolen;
+              target.score = 0;
+              this.teamScores[player.team] += stolen;
               target.respawnTimer = this.config.respawnDelay;
 
               const killMsg: KillMessage = {
@@ -352,6 +356,10 @@ export class GameServer {
 
             // Drop a pickup on enemy death
             if (killed) {
+              // Score: +5 for enemy kill
+              player.score += 5;
+              this.teamScores[player.team] += 5;
+
               const dropKind: 'health' | 'ammo' = this.rng() < 0.5 ? 'health' : 'ammo';
               const drop: ServerPickup = {
                 id: this.nextPickupId++,
@@ -548,12 +556,13 @@ export class GameServer {
     const duration = this.config.timeLimit - this.timeRemaining;
 
     const scoreboard = Array.from(this.players.values())
-      .sort((a, b) => b.kills - a.kills || a.deaths - b.deaths)
+      .sort((a, b) => b.score - a.score || b.kills - a.kills)
       .map(p => ({
         id: p.id,
         name: p.name,
         kills: p.kills,
         deaths: p.deaths,
+        score: p.score,
       }));
 
     const gameOver: GameOverMessage = {
@@ -667,6 +676,7 @@ export class GameServer {
         alive: p.alive,
         kills: p.kills,
         deaths: p.deaths,
+        score: p.score,
         name: p.name,
         invincible: p.invincible,
         team: p.team,

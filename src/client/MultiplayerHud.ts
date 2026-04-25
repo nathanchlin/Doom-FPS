@@ -3,7 +3,7 @@ import type { KillMessage, PlayerState, TeamScores } from '../shared/protocol';
 export class MultiplayerHud {
   private killFeed: HTMLElement;
   private matchTimer: HTMLElement;
-  private scoreboard: HTMLElement;
+  private leaderboard: HTMLElement;
   private respawnCountdown: HTMLElement;
   private mpHud: HTMLElement;
   private teamScoreBar: HTMLElement;
@@ -13,7 +13,7 @@ export class MultiplayerHud {
     this.mpHud = document.getElementById('mp-hud')!;
     this.killFeed = document.getElementById('kill-feed')!;
     this.matchTimer = document.getElementById('match-timer')!;
-    this.scoreboard = document.getElementById('scoreboard')!;
+    this.leaderboard = document.getElementById('mp-leaderboard')!;
     this.respawnCountdown = document.getElementById('respawn-countdown')!;
     this.teamScoreBar = document.getElementById('team-score-bar')!;
     this.shuffleNotification = document.getElementById('shuffle-notification')!;
@@ -56,31 +56,19 @@ export class MultiplayerHud {
       `<span class="team-blue">${scores.blue} BLUE</span>`;
   }
 
-  showScoreboard(players: PlayerState[]): void {
-    const redPlayers = players.filter(p => p.team === 'red').sort((a, b) => b.kills - a.kills);
-    const bluePlayers = players.filter(p => p.team === 'blue').sort((a, b) => b.kills - a.kills);
-
-    const renderTeam = (team: PlayerState[], color: string, label: string) => {
-      const header = `<div class="sb-team-header" style="color:${color}">${label}</div>`;
-      const rows = team.map(p => {
-        const botTag = p.isBot ? ' <span class="sb-bot">[BOT]</span>' : '';
-        return `<div class="sb-row" style="color:${color}">` +
-          `<span>${p.name}${botTag}</span>` +
-          `<span>${p.kills} / ${p.deaths}</span>` +
+  updateLeaderboard(players: PlayerState[]): void {
+    const sorted = [...players].sort((a, b) => b.score - a.score);
+    this.leaderboard.innerHTML =
+      `<div class="lb-header">排行榜</div>` +
+      sorted.map((p, i) => {
+        const color = p.team === 'red' ? '#ff6666' : '#66aaff';
+        const botTag = p.isBot ? '<span class="lb-bot">[BOT]</span> ' : '';
+        return `<div class="lb-row">` +
+          `<span class="lb-rank">${i + 1}</span>` +
+          `<span class="lb-name" style="color:${color}">${botTag}${p.name}</span>` +
+          `<span class="lb-score">${p.score}</span>` +
           `</div>`;
       }).join('');
-      return header + rows;
-    };
-
-    this.scoreboard.innerHTML =
-      renderTeam(redPlayers, '#cc3333', 'RED TEAM') +
-      `<div class="sb-divider"></div>` +
-      renderTeam(bluePlayers, '#3366cc', 'BLUE TEAM');
-    this.scoreboard.style.display = 'block';
-  }
-
-  hideScoreboard(): void {
-    this.scoreboard.style.display = 'none';
   }
 
   showRespawnCountdown(seconds: number): void {

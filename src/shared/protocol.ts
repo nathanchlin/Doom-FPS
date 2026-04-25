@@ -20,7 +20,7 @@ export interface MatchConfig {
 }
 
 export const DEFAULT_MATCH_CONFIG: MatchConfig = {
-  killTarget: 20,
+  killTarget: 1000,
   timeLimit: 600,
   respawnDelay: 3,
 };
@@ -39,6 +39,7 @@ export interface PlayerState {
   alive: boolean;
   kills: number;
   deaths: number;
+  score: number;
   name: string;
   invincible: boolean;
   team: Team;
@@ -203,7 +204,7 @@ export interface GameOverMessage {
   winnerName: string;
   winnerTeam: Team | null;
   teamScores: TeamScores;
-  scoreboard: Array<{ id: number; name: string; kills: number; deaths: number }>;
+  scoreboard: Array<{ id: number; name: string; kills: number; deaths: number; score: number }>;
   duration: number;
 }
 
