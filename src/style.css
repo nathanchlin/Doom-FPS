@@ -318,6 +318,106 @@ button:hover {
   font-weight: bold;
 }
 
+/* ============ Intro Screen ============ */
+
+#intro {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+.intro-content {
+  max-width: 640px;
+  padding: 48px 40px;
+  text-align: center;
+}
+.intro-title {
+  font-size: 56px;
+  letter-spacing: 12px;
+  color: #222222;
+  margin-bottom: 4px;
+}
+.intro-subtitle {
+  font-size: 14px;
+  letter-spacing: 4px;
+  opacity: 0.5;
+  margin-bottom: 36px;
+}
+.intro-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+  text-align: left;
+}
+.intro-section {
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #222222;
+  padding: 20px;
+}
+.intro-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+.intro-section-title {
+  font-size: 15px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+.intro-section-desc {
+  font-size: 12px;
+  line-height: 1.7;
+  opacity: 0.7;
+}
+.intro-enemies {
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #222222;
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  text-align: left;
+}
+.intro-enemy-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.intro-enemy {
+  font-size: 12px;
+  line-height: 1.6;
+  opacity: 0.8;
+}
+.enemy-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #222;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+#intro-start {
+  background: #222222;
+  color: #ffffff;
+  border: 3px solid #222222;
+  padding: 16px 48px;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+#intro-start:hover {
+  background: #ffffff;
+  color: #222222;
+  transform: translateY(-2px);
+}
+
 /* Damage shake (applied briefly to #game) */
 @keyframes shake {
   0%, 100% { transform: translate(0, 0); }

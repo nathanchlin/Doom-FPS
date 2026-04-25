@@ -67,8 +67,54 @@
     <!-- Hit marker -->
     <div id="hitmarker"></div>
 
+    <!-- Feature intro overlay (shown first) -->
+    <div id="intro">
+      <div class="intro-content">
+        <h1 class="intro-title">末日迷宫</h1>
+        <p class="intro-subtitle">无尽 Roguelike 迷宫射击</p>
+
+        <div class="intro-sections">
+          <div class="intro-section">
+            <div class="intro-icon">🏰</div>
+            <div class="intro-section-title">迷宫探索</div>
+            <div class="intro-section-desc">每一层都是随机生成的迷宫走廊。找到门并打开它们——门后可能是战斗、宝箱或通往下一层的出口。</div>
+          </div>
+
+          <div class="intro-section">
+            <div class="intro-icon">⚔️</div>
+            <div class="intro-section-title">战斗房间</div>
+            <div class="intro-section-desc">进入门后可能遭遇敌人。消灭所有敌人后获得宝箱奖励。小心走廊里的巡逻怪和地面红色危险区域！</div>
+          </div>
+
+          <div class="intro-section">
+            <div class="intro-icon">🃏</div>
+            <div class="intro-section-title">卡牌升级</div>
+            <div class="intro-section-desc">每通过一层，从三张卡中选择一张：新武器（步枪/霰弹枪/狙击枪）、永久属性提升或特殊效果。打造你的 Build！</div>
+          </div>
+
+          <div class="intro-section">
+            <div class="intro-icon">💀</div>
+            <div class="intro-section-title">硬核生存</div>
+            <div class="intro-section-desc">弹药和血量只能通过宝箱补给，跨层保留。死亡即重来。你能走多远？</div>
+          </div>
+        </div>
+
+        <div class="intro-enemies">
+          <div class="intro-section-title" style="margin-bottom: 12px;">敌人图鉴</div>
+          <div class="intro-enemy-list">
+            <div class="intro-enemy"><span class="enemy-dot" style="background:#f0f0f0;"></span> <b>标准型</b> — 远程射击，均衡型</div>
+            <div class="intro-enemy"><span class="enemy-dot" style="background:#cc3333;"></span> <b>冲锋型</b> — 快速近战，接触伤害</div>
+            <div class="intro-enemy"><span class="enemy-dot" style="background:#666666;"></span> <b>重装型</b> — 高血量高伤害，第3层出现</div>
+            <div class="intro-enemy"><span class="enemy-dot" style="background:#664488;"></span> <b>巡逻型</b> — 走廊巡逻，血量极厚</div>
+          </div>
+        </div>
+
+        <button id="intro-start">进入游戏</button>
+      </div>
+    </div>
+
     <!-- Start overlay -->
-    <div id="overlay">
+    <div id="overlay" style="display:none;">
       <div class="panel">
         <h1>末日 <span class="sub">· 迷宫</span></h1>
         <p class="tag">Three.js · TypeScript · Vite</p>
