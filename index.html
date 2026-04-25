@@ -143,6 +143,61 @@
       </div>
     </div>
 
+    <!-- Mode selection overlay -->
+    <div id="mode-select" style="display:none;">
+      <div class="panel">
+        <h1>末日 <span class="sub">· 迷宫</span></h1>
+        <button id="btn-singleplayer">单人游戏</button>
+        <button id="btn-create-room">创建房间</button>
+        <div class="join-row">
+          <input id="join-ip" type="text" placeholder="主机 IP (如 192.168.1.100)" />
+          <button id="btn-join-room">加入房间</button>
+        </div>
+        <div class="join-row">
+          <input id="player-name" type="text" placeholder="你的昵称" value="Player" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Lobby overlay -->
+    <div id="lobby" style="display:none;">
+      <div class="panel">
+        <h2 id="lobby-title">房间</h2>
+        <div id="lobby-players"></div>
+        <div id="lobby-settings">
+          <label>击杀目标: <select id="lobby-kill-target">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="30">30</option>
+          </select></label>
+          <label>时间限制: <select id="lobby-time-limit">
+            <option value="300">5 分钟</option>
+            <option value="600" selected>10 分钟</option>
+            <option value="900">15 分钟</option>
+          </select></label>
+        </div>
+        <button id="lobby-ready">就绪</button>
+        <button id="lobby-start" style="display:none;">开始游戏</button>
+      </div>
+    </div>
+
+    <!-- Multiplayer HUD -->
+    <div id="mp-hud" style="display:none;">
+      <div id="kill-feed"></div>
+      <div id="match-timer"></div>
+      <div id="scoreboard" style="display:none;"></div>
+      <div id="respawn-countdown" style="display:none;"></div>
+    </div>
+
+    <!-- Game over (multiplayer) -->
+    <div id="mp-gameover" style="display:none;">
+      <div class="panel">
+        <h1 id="mp-winner"></h1>
+        <div id="mp-scoreboard-final"></div>
+        <button id="mp-back-menu">返回菜单</button>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
