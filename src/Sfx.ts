@@ -77,6 +77,13 @@ export class Sfx {
     this.beep(440, 0.3, 'triangle', 0.3);
   }
 
+  cardSelect(): void {
+    if (!this.ready()) return;
+    this.beep(520, 0.08, 'sine', 0.4);
+    this.beep(780, 0.12, 'sine', 0.5);
+    this.sweep(400, 1200, 0.3, 'triangle', 0.3);
+  }
+
   // --- primitives --------------------------------------------------------
 
   private beep(freq: number, duration: number, type: OscType, vol = 1): void {
