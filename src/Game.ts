@@ -10,6 +10,8 @@ import { Sfx } from './Sfx';
 import { generateMaze, type MazeData } from './Maze';
 import { Door } from './Door';
 import { Room } from './Room';
+import { drawCards, showCardPicker, type Card, type WeaponCard, type StatCard, type SpecialCard } from './CardPicker';
+import type { WeaponType } from './weapons';
 
 type GameState = 'exploring' | 'in_room' | 'dead';
 
@@ -39,6 +41,17 @@ export class Game {
   private elapsedTime = 0;
   private transitioning = false;
   private nearDoor: Door | null = null;
+
+  private playerBuffs = {
+    currentWeapon: 'rifle' as WeaponType,
+    damageMultiplier: 1.0,
+    maxHealthBonus: 0,
+    maxAmmoBonus: 0,
+    speedBonus: 0,
+    sprintBonus: 0,
+    shieldHits: 0,
+    scoutActive: false,
+  };
 
   constructor(container: HTMLElement) {
     this.engine = new Engine(container);
@@ -132,7 +145,8 @@ export class Game {
       if (this.state === 'dead') {
         this.restart();
       } else {
-        this.player.ammo = Math.min(this.player.ammo + CONFIG.player.maxAmmo, CONFIG.player.maxAmmo);
+        const maxAmmo = this.weapon.getConfig().magazine + this.playerBuffs.maxAmmoBonus;
+        this.player.ammo = maxAmmo;
         this.hud.setAmmo(this.player.ammo);
       }
     });
@@ -242,16 +256,105 @@ export class Game {
       this.currentRoom = null;
     }
 
-    // Generate new floor
-    this.initFloor(this.floor + 1);
-    this.state = 'exploring';
-
+    // Stop game loop updates during card pick
+    this.state = 'exploring'; // prevent in_room updates
     this.hud.hideRoomStatus();
+
+    // Show card picker (unlock mouse for clicking)
+    this.input.exitPointerLock();
+    await this.hud.fadeOut();
+
+    const cards = drawCards();
+    const picked = await showCardPicker(cards);
+    this.sfx.cardSelect();
+
+    // Apply card effect
+    this.applyCard(picked);
+
+    // Fade and generate new floor
+    await this.hud.fadeIn();
+
+    // Reset scout for previous floor
+    this.playerBuffs.scoutActive = false;
+
+    this.initFloor(this.floor + 1);
+
+    // Apply scout if it was just picked
+    if (picked.category === 'special' && (picked as SpecialCard).effect === 'scout') {
+      this.playerBuffs.scoutActive = true;
+      for (const door of this.doors) {
+        door.enableScout();
+      }
+    }
+
     this.refreshHud();
 
     await this.hud.fadeOut();
     this.hud.showFloorTransition(this.floor);
+    this.input.requestPointerLock();
     this.transitioning = false;
+  }
+
+  private applyCard(card: Card): void {
+    if (card.category === 'weapon') {
+      const wc = card as WeaponCard;
+      this.playerBuffs.currentWeapon = wc.weaponType;
+      const newMax = this.weapon.switchWeapon(wc.weaponType, this.playerBuffs.maxAmmoBonus);
+      this.player.ammo = newMax;
+      this.weapon.setDamageMultiplier(this.playerBuffs.damageMultiplier);
+      this.hud.setWeapon(wc.title);
+    } else if (card.category === 'stat') {
+      const sc = card as StatCard;
+      switch (sc.stat) {
+        case 'health':
+          this.playerBuffs.maxHealthBonus += CONFIG.cards.stat.healthBoost;
+          this.player.maxHealthBonus = this.playerBuffs.maxHealthBonus;
+          this.player.hp = Math.min(
+            this.player.hp + CONFIG.cards.stat.healthBoost,
+            CONFIG.player.maxHealth + this.playerBuffs.maxHealthBonus,
+          );
+          break;
+        case 'ammo':
+          this.playerBuffs.maxAmmoBonus += CONFIG.cards.stat.ammoExpand;
+          this.player.ammo = Math.min(
+            this.player.ammo + CONFIG.cards.stat.ammoExpand,
+            this.weapon.getConfig().magazine + this.playerBuffs.maxAmmoBonus,
+          );
+          break;
+        case 'speed':
+          this.playerBuffs.speedBonus += CONFIG.cards.stat.speedUp;
+          this.playerBuffs.sprintBonus += CONFIG.cards.stat.sprintUp;
+          this.player.speedBonus = this.playerBuffs.speedBonus;
+          this.player.sprintBonus = this.playerBuffs.sprintBonus;
+          break;
+        case 'damage':
+          this.playerBuffs.damageMultiplier *= CONFIG.cards.stat.damageMultiplier;
+          this.weapon.setDamageMultiplier(this.playerBuffs.damageMultiplier);
+          break;
+      }
+    } else {
+      const sp = card as SpecialCard;
+      switch (sp.effect) {
+        case 'heal': {
+          const maxHp = CONFIG.player.maxHealth + this.playerBuffs.maxHealthBonus;
+          this.player.hp = maxHp;
+          break;
+        }
+        case 'resupply': {
+          const maxAmmo = this.weapon.getConfig().magazine + this.playerBuffs.maxAmmoBonus;
+          this.player.ammo = maxAmmo;
+          break;
+        }
+        case 'shield':
+          this.playerBuffs.shieldHits += CONFIG.cards.special.shieldHits;
+          this.player.shieldHits = this.playerBuffs.shieldHits;
+          this.hud.setShield(this.playerBuffs.shieldHits);
+          break;
+        case 'scout':
+          // Applied after floor generation in advanceFloor
+          break;
+      }
+    }
   }
 
   private registerUpdaters(): void {
@@ -359,6 +462,9 @@ export class Game {
     this.sfx.damage();
     this.hud.flashDamage();
     this.hud.setHp(this.player.hp);
+    // Sync shield display
+    this.playerBuffs.shieldHits = this.player.shieldHits;
+    this.hud.setShield(this.playerBuffs.shieldHits);
     if (died) {
       this.onDeath();
     }
@@ -389,6 +495,26 @@ export class Game {
     // Reset stats
     this.totalKills = 0;
     this.elapsedTime = 0;
+
+    // Reset buffs
+    this.playerBuffs = {
+      currentWeapon: 'rifle',
+      damageMultiplier: 1.0,
+      maxHealthBonus: 0,
+      maxAmmoBonus: 0,
+      speedBonus: 0,
+      sprintBonus: 0,
+      shieldHits: 0,
+      scoutActive: false,
+    };
+    this.weapon.switchWeapon('rifle', 0);
+    this.weapon.setDamageMultiplier(1.0);
+    this.player.speedBonus = 0;
+    this.player.sprintBonus = 0;
+    this.player.maxHealthBonus = 0;
+    this.player.shieldHits = 0;
+    this.hud.setWeapon('RIFLE');
+    this.hud.setShield(0);
 
     // Reset player
     this.player.hp = CONFIG.player.maxHealth;
