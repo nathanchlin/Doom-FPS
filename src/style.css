@@ -509,3 +509,107 @@ button:hover {
   border-color: #4488ff;
 }
 .hud-shield .value { font-size: 16px; color: #4488ff; }
+
+/* ─── Mode Selection ─── */
+#mode-select {
+  position: fixed; inset: 0; display: flex;
+  align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.85); z-index: 100;
+}
+#mode-select .panel { text-align: center; }
+#mode-select button {
+  display: block; width: 100%; margin: 8px 0;
+  padding: 12px 24px; font-size: 16px;
+  cursor: pointer; border: 1px solid #555;
+  background: #222; color: #fff; border-radius: 4px;
+}
+#mode-select button:hover { background: #444; }
+.join-row {
+  display: flex; gap: 8px; margin: 8px 0;
+}
+.join-row input {
+  flex: 1; padding: 10px; font-size: 14px;
+  border: 1px solid #555; background: #111; color: #fff;
+  border-radius: 4px;
+}
+
+/* ─── Lobby ─── */
+#lobby {
+  position: fixed; inset: 0; display: flex;
+  align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.85); z-index: 100;
+}
+#lobby .panel { min-width: 320px; }
+.lobby-player {
+  padding: 6px 0; border-bottom: 1px solid #333;
+  font-size: 14px; color: #ccc;
+}
+#lobby-settings {
+  margin: 12px 0; display: flex; gap: 16px;
+}
+#lobby-settings label { color: #aaa; font-size: 13px; }
+#lobby-settings select {
+  background: #222; color: #fff; border: 1px solid #555;
+  padding: 4px 8px; border-radius: 3px;
+}
+#lobby-ready, #lobby-start {
+  margin: 8px 4px; padding: 10px 20px;
+  cursor: pointer; border: 1px solid #555;
+  background: #222; color: #fff; font-size: 14px;
+  border-radius: 4px;
+}
+#lobby-ready:hover, #lobby-start:hover { background: #444; }
+
+/* ─── Multiplayer HUD ─── */
+#mp-hud { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+#kill-feed {
+  position: absolute; top: 10px; right: 10px;
+  text-align: right; font-size: 13px;
+}
+.kill-entry {
+  color: #ff6644; background: rgba(0,0,0,0.5);
+  padding: 4px 10px; margin: 2px 0; border-radius: 3px;
+  animation: fadeIn 0.2s;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+#match-timer {
+  position: absolute; top: 10px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 20px; color: #fff;
+  text-shadow: 0 0 4px rgba(0,0,0,0.8);
+  font-family: monospace;
+}
+#scoreboard {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.8); padding: 20px;
+  border: 1px solid #555; min-width: 300px;
+  border-radius: 6px;
+}
+.sb-row {
+  display: flex; justify-content: space-between;
+  padding: 4px 0; color: #ccc; font-size: 14px;
+}
+#respawn-countdown {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px; color: #ff4444;
+  text-shadow: 0 0 10px rgba(255,0,0,0.5);
+}
+
+/* ─── MP Game Over ─── */
+#mp-gameover {
+  position: fixed; inset: 0; display: flex;
+  align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.85); z-index: 100;
+}
+#mp-gameover .panel { text-align: center; min-width: 320px; }
+#mp-winner { font-size: 28px; color: #ffd700; margin-bottom: 16px; }
+#mp-scoreboard-final { color: #ccc; margin-bottom: 16px; }
+#mp-scoreboard-final div { padding: 4px 0; }
+#mp-back-menu {
+  padding: 10px 24px; cursor: pointer;
+  border: 1px solid #555; background: #222; color: #fff;
+  font-size: 14px; border-radius: 4px;
+}
+#mp-back-menu:hover { background: #444; }
