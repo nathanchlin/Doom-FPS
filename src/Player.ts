@@ -24,6 +24,12 @@ export class Player {
   ammo: number = CONFIG.player.maxAmmo;
   alive = true;
 
+  // Buff bonuses (applied by Game from card picks)
+  speedBonus = 0;
+  sprintBonus = 0;
+  maxHealthBonus = 0;
+  shieldHits = 0;
+
   constructor(
     camera: THREE.PerspectiveCamera,
     private readonly input: Input,
@@ -102,7 +108,12 @@ export class Player {
 
   takeDamage(amount: number): boolean {
     if (!this.alive) return false;
-    this.hp = Math.max(0, this.hp - amount);
+    let dmg = amount;
+    if (this.shieldHits > 0) {
+      dmg = Math.round(dmg / 2);
+      this.shieldHits--;
+    }
+    this.hp = Math.max(0, this.hp - dmg);
     if (this.hp <= 0) {
       this.alive = false;
       return true;
@@ -133,7 +144,9 @@ export class Player {
     const forward = this.input.isDown('w') ? 1 : this.input.isDown('s') ? -1 : 0;
     const strafe = this.input.isDown('d') ? 1 : this.input.isDown('a') ? -1 : 0;
     const sprint = this.input.isDown('shift');
-    const speed = sprint ? CONFIG.player.sprintSpeed : CONFIG.player.moveSpeed;
+    const speed = sprint
+      ? CONFIG.player.sprintSpeed + this.sprintBonus
+      : CONFIG.player.moveSpeed + this.speedBonus;
 
     // Yaw-based forward vector (X-Z plane)
     const cos = Math.cos(this.yaw);
