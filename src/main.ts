@@ -18,7 +18,7 @@ document.addEventListener('pointerlockchange', () => {
     const dead = (document.getElementById('gameover') as HTMLElement).style.display === 'flex';
     if (!dead) {
       overlay.style.display = 'flex';
-      startBtn.textContent = 'CLICK TO RESUME';
+      startBtn.textContent = '点击继续';
     }
   } else {
     overlay.style.display = 'none';

@@ -400,7 +400,7 @@ export class Game {
 
     this.nearDoor = foundNear;
     if (foundNear && !this.transitioning) {
-      this.hud.showInteract('[E] OPEN DOOR');
+      this.hud.showInteract('[E] 开门');
     } else {
       this.hud.hideInteract();
     }
@@ -445,11 +445,11 @@ export class Game {
     // Interact prompts in room
     if (!this.transitioning) {
       if (this.currentRoom.chest && this.currentRoom.chest.isPlayerNear(px, pz) && !this.currentRoom.chest.isOpened()) {
-        this.hud.showInteract('[E] OPEN CHEST');
+        this.hud.showInteract('[E] 打开宝箱');
       } else if (this.currentRoom.type === 'exit' && this.currentRoom.isNearExitPortal(px, pz)) {
-        this.hud.showInteract('[E] ENTER NEXT FLOOR');
+        this.hud.showInteract('[E] 进入下一层');
       } else if (this.currentRoom.isNearReturnDoor(px, pz)) {
-        this.hud.showInteract('[E] RETURN TO MAZE');
+        this.hud.showInteract('[E] 返回迷宫');
       } else {
         this.hud.hideInteract();
       }
@@ -513,7 +513,7 @@ export class Game {
     this.player.sprintBonus = 0;
     this.player.maxHealthBonus = 0;
     this.player.shieldHits = 0;
-    this.hud.setWeapon('RIFLE');
+    this.hud.setWeapon('步枪');
     this.hud.setShield(0);
 
     // Reset player

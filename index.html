@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DOOM · MAZE · Three.js</title>
+    <title>末日 · 迷宫 · Three.js</title>
   </head>
   <body>
     <div id="game"></div>
@@ -15,31 +15,31 @@
     <!-- HUD -->
     <div id="hud">
       <div class="hud-item hud-left">
-        <div class="label">HEALTH</div>
+        <div class="label">生命</div>
         <div class="value" id="hp">100</div>
       </div>
       <div class="hud-item hud-right">
-        <div class="label">AMMO</div>
+        <div class="label">弹药</div>
         <div class="value" id="ammo">30</div>
       </div>
       <div class="hud-item hud-top-left">
-        <div class="label">FLOOR</div>
+        <div class="label">层数</div>
         <div class="value" id="floor">1</div>
       </div>
       <div class="hud-item hud-top-right">
-        <div class="label">DOORS</div>
+        <div class="label">门</div>
         <div class="value" id="doors">0 / 0</div>
       </div>
       <div class="hud-item hud-weapon">
-        <div class="label">WEAPON</div>
-        <div class="value" id="weapon-name">RIFLE</div>
+        <div class="label">武器</div>
+        <div class="value" id="weapon-name">步枪</div>
       </div>
       <div class="hud-item hud-shield" id="shield-indicator" style="display:none;">
-        <div class="label">SHIELD</div>
+        <div class="label">护盾</div>
         <div class="value" id="shield-hits">3</div>
       </div>
       <div class="hud-item hud-center-top" id="room-status" style="display:none;">
-        <div class="label">ENEMIES</div>
+        <div class="label">敌人</div>
         <div class="value" id="room-enemies">0</div>
       </div>
     </div>
@@ -49,7 +49,7 @@
 
     <!-- Floor transition overlay -->
     <div id="floor-transition" style="display:none;">
-      <div class="floor-text" id="floor-text">FLOOR 1</div>
+      <div class="floor-text" id="floor-text">第 1 层</div>
     </div>
 
     <!-- Fade overlay for room transitions -->
@@ -57,7 +57,7 @@
 
     <!-- Card picker overlay -->
     <div id="card-picker" style="display:none;">
-      <div class="card-picker-title">CHOOSE A CARD</div>
+      <div class="card-picker-title">选择一张卡牌</div>
       <div id="card-container" class="card-container"></div>
     </div>
 
@@ -70,30 +70,30 @@
     <!-- Start overlay -->
     <div id="overlay">
       <div class="panel">
-        <h1>DOOM <span class="sub">· MAZE</span></h1>
+        <h1>末日 <span class="sub">· 迷宫</span></h1>
         <p class="tag">Three.js · TypeScript · Vite</p>
         <div class="controls">
-          <div><kbd>WASD</kbd> move</div>
-          <div><kbd>MOUSE</kbd> look</div>
-          <div><kbd>LMB</kbd> shoot</div>
-          <div><kbd>SPACE</kbd> jump</div>
-          <div><kbd>SHIFT</kbd> sprint</div>
-          <div><kbd>E</kbd> interact</div>
-          <div><kbd>R</kbd> reload</div>
-          <div><kbd>ESC</kbd> pause</div>
+          <div><kbd>WASD</kbd> 移动</div>
+          <div><kbd>MOUSE</kbd> 视角</div>
+          <div><kbd>LMB</kbd> 射击</div>
+          <div><kbd>SPACE</kbd> 跳跃</div>
+          <div><kbd>SHIFT</kbd> 冲刺</div>
+          <div><kbd>E</kbd> 交互</div>
+          <div><kbd>R</kbd> 换弹</div>
+          <div><kbd>ESC</kbd> 暂停</div>
         </div>
-        <button id="start">CLICK TO PLAY</button>
-        <p class="hint">Pointer will be locked. Press ESC to release.</p>
+        <button id="start">点击开始</button>
+        <p class="hint">鼠标将被锁定，按 ESC 释放。</p>
       </div>
     </div>
 
     <!-- GameOver overlay -->
     <div id="gameover" class="end-overlay">
       <div class="panel">
-        <h1 class="lose">YOU DIED</h1>
+        <h1 class="lose">你死了</h1>
         <p class="sub" id="gameover-sub"></p>
         <div class="stats" id="gameover-stats"></div>
-        <button id="gameover-restart">RESTART</button>
+        <button id="gameover-restart">重新开始</button>
       </div>
     </div>
 

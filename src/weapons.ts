@@ -17,7 +17,7 @@ export interface WeaponConfig {
 const WEAPONS: Record<WeaponType, WeaponConfig> = {
   rifle: {
     type: 'rifle',
-    name: 'RIFLE',
+    name: '步枪',
     damage: 34,
     fireRate: 0.14,
     magazine: 30,
@@ -28,7 +28,7 @@ const WEAPONS: Record<WeaponType, WeaponConfig> = {
   },
   shotgun: {
     type: 'shotgun',
-    name: 'SHOTGUN',
+    name: '霰弹枪',
     damage: 8,
     fireRate: 0.8,
     magazine: 8,
@@ -39,7 +39,7 @@ const WEAPONS: Record<WeaponType, WeaponConfig> = {
   },
   sniper: {
     type: 'sniper',
-    name: 'SNIPER',
+    name: '狙击枪',
     damage: 120,
     fireRate: 1.2,
     magazine: 5,

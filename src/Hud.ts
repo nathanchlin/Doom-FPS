@@ -71,7 +71,7 @@ export class Hud {
 
   showRoomStatus(alive: number): void {
     this.roomStatus.style.display = '';
-    this.roomEnemies.textContent = alive > 0 ? String(alive) : 'CLEARED';
+    this.roomEnemies.textContent = alive > 0 ? String(alive) : '已清除';
   }
 
   hideRoomStatus(): void {
@@ -94,8 +94,8 @@ export class Hud {
   /** Show loot pickup notification, auto-hides after 1.5s */
   showLoot(ammo: number, health: number): void {
     const parts: string[] = [];
-    if (ammo > 0) parts.push(`AMMO +${ammo}`);
-    if (health > 0) parts.push(`HP +${health}`);
+    if (ammo > 0) parts.push(`弹药 +${ammo}`);
+    if (health > 0) parts.push(`生命 +${health}`);
     if (parts.length === 0) return;
     this.interactPrompt.textContent = parts.join('  ');
     this.interactPrompt.style.display = '';
@@ -108,7 +108,7 @@ export class Hud {
 
   /** Show floor number announcement (auto-hides after animation) */
   showFloorTransition(floor: number): void {
-    this.floorText.textContent = `FLOOR ${floor}`;
+    this.floorText.textContent = `第 ${floor} 层`;
     this.floorTransition.style.display = 'flex';
     // Reset animation
     this.floorText.style.animation = 'none';
@@ -157,12 +157,12 @@ export class Hud {
     const minutes = Math.floor(stats.time / 60);
     const seconds = Math.floor(stats.time % 60);
     statsEl.innerHTML = `
-      <div><span>FLOOR REACHED</span><span class="stat-value">${stats.floor}</span></div>
-      <div><span>KILLS</span><span class="stat-value">${stats.kills}</span></div>
-      <div><span>TIME</span><span class="stat-value">${minutes}:${String(seconds).padStart(2, '0')}</span></div>
-      <div><span>DOORS OPENED</span><span class="stat-value">${stats.doors}</span></div>
+      <div><span>到达层数</span><span class="stat-value">${stats.floor}</span></div>
+      <div><span>击杀数</span><span class="stat-value">${stats.kills}</span></div>
+      <div><span>存活时间</span><span class="stat-value">${minutes}:${String(seconds).padStart(2, '0')}</span></div>
+      <div><span>开门数</span><span class="stat-value">${stats.doors}</span></div>
     `;
-    mustGet('gameover-sub').textContent = 'The maze claims another.';
+    mustGet('gameover-sub').textContent = '迷宫又吞噬了一个灵魂。';
     el.style.display = 'flex';
     const btn = mustGet('gameover-restart') as HTMLButtonElement;
     const handler = () => {
