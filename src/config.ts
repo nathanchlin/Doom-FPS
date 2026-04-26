@@ -202,7 +202,7 @@ export const CONFIG = {
   // Touch controls (mobile)
   touch: {
     moveDeadzone: 15,        // Movement joystick deadzone (px)
-    lookSensitivity: 0.4,    // Look sensitivity (lower than mouse 0.0022)
+    lookSensitivity: 1.2,    // Look sensitivity (touch)
     jumpSwipeThreshold: 80,  // Swipe-up jump threshold (px)
     joystickRadius: 50,      // Joystick visual radius (px)
     buttonSize: 48,          // Action button size (px)

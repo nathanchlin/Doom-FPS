@@ -6,6 +6,7 @@ export interface TouchUIElements {
   rightZone: HTMLDivElement;
   joystickBase: HTMLDivElement;
   joystickThumb: HTMLDivElement;
+  btnFire: HTMLDivElement;
   btnReload: HTMLDivElement;
   btnInteract: HTMLDivElement;
   btnWeapon1: HTMLDivElement;
@@ -24,9 +25,15 @@ export function createTouchUI(): TouchUIElements {
   const leftZone = document.createElement('div');
   leftZone.id = 'touch-left';
 
-  // Right zone (aim + fire)
+  // Right zone (aim)
   const rightZone = document.createElement('div');
   rightZone.id = 'touch-right';
+
+  // Fire button (right side, big)
+  const btnFire = createButton('FIRE', 'fire', 64);
+  btnFire.style.position = 'absolute';
+  btnFire.style.bottom = '130px';
+  btnFire.style.right = '25px';
 
   // Dynamic joystick elements (hidden until touch)
   const joystickBase = document.createElement('div');
@@ -66,6 +73,7 @@ export function createTouchUI(): TouchUIElements {
   container.appendChild(leftZone);
   container.appendChild(rightZone);
   container.appendChild(joystickBase);
+  container.appendChild(btnFire);
   container.appendChild(btnReload);
   container.appendChild(btnInteract);
   container.appendChild(weaponRow);
@@ -77,6 +85,7 @@ export function createTouchUI(): TouchUIElements {
     rightZone,
     joystickBase,
     joystickThumb,
+    btnFire,
     btnReload,
     btnInteract,
     btnWeapon1,

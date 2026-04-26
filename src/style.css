@@ -689,9 +689,13 @@ button:hover {
 #touch-ui {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 50;
   pointer-events: none;
   touch-action: none;
+  display: none;
+}
+#touch-ui.active {
+  display: block;
 }
 
 #touch-left {
@@ -759,6 +763,13 @@ button:hover {
 .touch-btn[data-action="interact"] {
   background: rgba(100, 200, 100, 0.35);
   border-color: rgba(100, 200, 100, 0.6);
+}
+
+.touch-btn[data-action="fire"] {
+  background: rgba(255, 60, 60, 0.45);
+  border-color: rgba(255, 100, 100, 0.7);
+  font-size: 11px;
+  letter-spacing: 1px;
 }
 
 /* Weapon row */

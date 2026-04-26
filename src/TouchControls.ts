@@ -139,7 +139,7 @@ export class TouchControls {
     this.ui.joystickBase.style.display = 'none';
   }
 
-  // ─── Right Zone: Aim + Fire + Jump ───
+  // ─── Right Zone: Aim + Jump (fire is a separate button) ───
 
   private bindRightZone(): void {
     const el = this.ui.rightZone;
@@ -151,10 +151,6 @@ export class TouchControls {
       this.rightTouchId = t.identifier;
       this.rightOrigin = { x: t.clientX, y: t.clientY };
       this.rightStartY = t.clientY;
-
-      // Start firing
-      this.input.setTouchFiring(true);
-      this.input.fireOnce();
     }, { passive: false });
 
     el.addEventListener('touchmove', (e: TouchEvent) => {
@@ -175,13 +171,9 @@ export class TouchControls {
       const t = this.findTouch(e, this.rightTouchId);
       if (!t) return;
 
-      // Stop firing
-      this.input.setTouchFiring(false);
-
       // Check for jump swipe (finger moved up significantly)
       const totalDy = this.rightStartY - t.clientY;
       if (totalDy > CONFIG.touch.jumpSwipeThreshold) {
-        // Simulate spacebar press and release
         this.input.setVirtualKey(' ', true);
         setTimeout(() => this.input.setVirtualKey(' ', false), 50);
       }
@@ -191,7 +183,6 @@ export class TouchControls {
     });
 
     el.addEventListener('touchcancel', () => {
-      this.input.setTouchFiring(false);
       this.rightTouchId = null;
       this.rightOrigin = null;
     });
@@ -200,6 +191,21 @@ export class TouchControls {
   // ─── Buttons ───
 
   private bindButtons(): void {
+    // Fire button — hold to auto-fire
+    this.ui.btnFire.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.input.setTouchFiring(true);
+      this.input.fireOnce();
+    }, { passive: false });
+    this.ui.btnFire.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      this.input.setTouchFiring(false);
+    });
+    this.ui.btnFire.addEventListener('touchcancel', () => {
+      this.input.setTouchFiring(false);
+    });
+
     // Reload — triggers the onKeyDown callback for 'r'
     this.bindButton(this.ui.btnReload, () => {
       const cbs = (this.input as any).onKeyDown.get('r');

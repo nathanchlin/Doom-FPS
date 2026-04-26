@@ -47,6 +47,16 @@ if (Input.isTouchDevice()) {
   if (hint) (hint as HTMLElement).style.display = 'none';
 }
 
+function activateTouchUI(): void {
+  const el = document.getElementById('touch-ui');
+  if (el) el.classList.add('active');
+}
+
+function deactivateTouchUI(): void {
+  const el = document.getElementById('touch-ui');
+  if (el) el.classList.remove('active');
+}
+
 // ─── Intro → Mode Select ───
 introStartBtn.addEventListener('click', () => {
   intro.style.display = 'none';
@@ -64,12 +74,13 @@ startBtn.addEventListener('click', () => {
   overlay.style.display = 'none';
   if (game.isMultiplayer()) {
     if (Input.isTouchDevice()) {
-      // No pointer lock on mobile — engine already started by game_start handler
+      activateTouchUI();
     } else {
       game.input.requestPointerLock();
     }
   } else {
     game.start();
+    activateTouchUI();
   }
 });
 
@@ -111,6 +122,7 @@ document.getElementById('mp-back-menu')!.addEventListener('click', () => {
 document.addEventListener('pointerlockchange', () => {
   if (Input.isTouchDevice()) return; // No pointer lock management on mobile
   if (document.pointerLockElement == null) {
+    deactivateTouchUI();
     const dead = (document.getElementById('gameover') as HTMLElement).style.display === 'flex';
     const mpOver = (document.getElementById('mp-gameover') as HTMLElement).style.display === 'flex';
     if (!dead && !mpOver) {
@@ -119,6 +131,7 @@ document.addEventListener('pointerlockchange', () => {
     }
   } else {
     overlay.style.display = 'none';
+    activateTouchUI();
   }
 });
 
