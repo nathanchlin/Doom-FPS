@@ -13,6 +13,14 @@ export class Input {
 
   private locked = false;
 
+  // Virtual input (for touch controls)
+  private virtualKeys = new Map<string, boolean>();
+  private virtualMouseDX = 0;
+  private virtualMouseDY = 0;
+  private lockedOverride = false;
+  private touchFiring = false;
+  private touchControls: import('./TouchControls').TouchControls | null = null;
+
   constructor(private readonly canvas: HTMLElement) {
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
@@ -28,6 +36,10 @@ export class Input {
     });
   }
 
+  static isTouchDevice(): boolean {
+    return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  }
+
   requestPointerLock(): void {
     this.canvas.requestPointerLock?.();
   }
@@ -37,22 +49,25 @@ export class Input {
   }
 
   isLocked(): boolean {
-    return this.locked;
+    return this.locked || this.lockedOverride;
   }
 
   isDown(key: string): boolean {
-    return this.keys.has(key.toLowerCase());
+    const k = key.toLowerCase();
+    return this.keys.has(k) || (this.virtualKeys.get(k) ?? false);
   }
 
   isMouseDown(): boolean {
-    return this.mouseDown;
+    return this.mouseDown || this.touchFiring;
   }
 
   /** Consume and return accumulated mouse delta, then reset. */
   consumeMouseDelta(): { dx: number; dy: number } {
-    const r = { dx: this.mouseDX, dy: this.mouseDY };
+    const r = { dx: this.mouseDX + this.virtualMouseDX, dy: this.mouseDY + this.virtualMouseDY };
     this.mouseDX = 0;
     this.mouseDY = 0;
+    this.virtualMouseDX = 0;
+    this.virtualMouseDY = 0;
     return r;
   }
 
@@ -61,6 +76,41 @@ export class Input {
     const list = this.onKeyDown.get(k) ?? [];
     list.push(cb);
     this.onKeyDown.set(k, list);
+  }
+
+  /** Inject a virtual key state (used by TouchControls). */
+  setVirtualKey(key: string, pressed: boolean): void {
+    if (pressed) {
+      this.virtualKeys.set(key.toLowerCase(), true);
+    } else {
+      this.virtualKeys.delete(key.toLowerCase());
+    }
+  }
+
+  /** Inject virtual mouse delta (used by TouchControls). */
+  injectMouseDelta(dx: number, dy: number): void {
+    this.virtualMouseDX += dx;
+    this.virtualMouseDY += dy;
+  }
+
+  /** Bypass pointer-lock check for mobile (no pointer lock available). */
+  setLockedOverride(value: boolean): void {
+    this.lockedOverride = value;
+  }
+
+  /** Set touch firing state. */
+  setTouchFiring(value: boolean): void {
+    this.touchFiring = value;
+  }
+
+  /** Register TouchControls for cleanup. */
+  setTouchControls(tc: import('./TouchControls').TouchControls): void {
+    this.touchControls = tc;
+  }
+
+  /** Trigger a single fire event (used by touch fire start). */
+  fireOnce(): void {
+    for (const cb of this.onMouseDown) cb();
   }
 
   private handleKeyDown = (e: KeyboardEvent): void => {
@@ -103,5 +153,9 @@ export class Input {
     document.removeEventListener('mousedown', this.handleMouseDown);
     document.removeEventListener('mouseup', this.handleMouseUp);
     document.removeEventListener('pointerlockchange', this.handlePointerLockChange);
+    if (this.touchControls) {
+      this.touchControls.dispose();
+      this.touchControls = null;
+    }
   }
 }
