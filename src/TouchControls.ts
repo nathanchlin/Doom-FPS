@@ -21,6 +21,7 @@ export class TouchControls {
   private rightStartY = 0;
   private activeWeaponIndex = 0;
   private weaponButtons: HTMLDivElement[];
+  private touchingButtons = new Set<number>(); // touch IDs currently on buttons
 
   constructor(
     private readonly input: Input,
@@ -43,6 +44,8 @@ export class TouchControls {
       e.preventDefault();
       if (this.leftTouchId !== null) return;
       const t = e.changedTouches[0]!;
+      // Skip if this touch originated on a button
+      if (this.touchingButtons.has(t.identifier)) return;
       this.leftTouchId = t.identifier;
       this.leftOrigin = { x: t.clientX, y: t.clientY };
       this.showJoystick(t.clientX, t.clientY);
@@ -148,6 +151,8 @@ export class TouchControls {
       e.preventDefault();
       if (this.rightTouchId !== null) return;
       const t = e.changedTouches[0]!;
+      // Skip if this touch originated on a button
+      if (this.touchingButtons.has(t.identifier)) return;
       this.rightTouchId = t.identifier;
       this.rightOrigin = { x: t.clientX, y: t.clientY };
       this.rightStartY = t.clientY;
@@ -192,19 +197,30 @@ export class TouchControls {
 
   private bindButtons(): void {
     // Fire button — hold to auto-fire
-    this.ui.btnFire.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.input.setTouchFiring(true);
-      this.input.fireOnce();
-    }, { passive: false });
-    this.ui.btnFire.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      this.input.setTouchFiring(false);
-    });
-    this.ui.btnFire.addEventListener('touchcancel', () => {
-      this.input.setTouchFiring(false);
-    });
+    const bindFireButton = (btn: HTMLDivElement) => {
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const t = e.changedTouches[0]!;
+        this.touchingButtons.add(t.identifier);
+        this.input.setTouchFiring(true);
+        this.input.fireOnce();
+      }, { passive: false });
+      btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        const t = e.changedTouches[0]!;
+        this.touchingButtons.delete(t.identifier);
+        this.input.setTouchFiring(false);
+      });
+      btn.addEventListener('touchcancel', (e) => {
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          this.touchingButtons.delete(e.changedTouches[i]!.identifier);
+        }
+        this.input.setTouchFiring(false);
+      });
+    };
+    bindFireButton(this.ui.btnFire);
+    bindFireButton(this.ui.btnFireLeft);
 
     // Reload — triggers the onKeyDown callback for 'r'
     this.bindButton(this.ui.btnReload, () => {
@@ -228,8 +244,19 @@ export class TouchControls {
     el.addEventListener('touchstart', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      const t = e.changedTouches[0]!;
+      this.touchingButtons.add(t.identifier);
       action();
     }, { passive: false });
+    el.addEventListener('touchend', (e) => {
+      const t = e.changedTouches[0]!;
+      this.touchingButtons.delete(t.identifier);
+    });
+    el.addEventListener('touchcancel', (e) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        this.touchingButtons.delete(e.changedTouches[i]!.identifier);
+      }
+    });
   }
 
   private switchWeapon(index: number): void {

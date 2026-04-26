@@ -7,6 +7,7 @@ export interface TouchUIElements {
   joystickBase: HTMLDivElement;
   joystickThumb: HTMLDivElement;
   btnFire: HTMLDivElement;
+  btnFireLeft: HTMLDivElement;
   btnReload: HTMLDivElement;
   btnInteract: HTMLDivElement;
   btnWeapon1: HTMLDivElement;
@@ -29,11 +30,19 @@ export function createTouchUI(): TouchUIElements {
   const rightZone = document.createElement('div');
   rightZone.id = 'touch-right';
 
-  // Fire button (right side, big)
+  // Fire button (right side, vertical center)
   const btnFire = createButton('FIRE', 'fire', 64);
   btnFire.style.position = 'absolute';
-  btnFire.style.bottom = '130px';
-  btnFire.style.right = '25px';
+  btnFire.style.top = '50%';
+  btnFire.style.transform = 'translateY(-50%)';
+  btnFire.style.right = '12px';
+
+  // Fire button (left side, vertical center)
+  const btnFireLeft = createButton('FIRE', 'fire', 64);
+  btnFireLeft.style.position = 'absolute';
+  btnFireLeft.style.top = '50%';
+  btnFireLeft.style.transform = 'translateY(-50%)';
+  btnFireLeft.style.left = '12px';
 
   // Dynamic joystick elements (hidden until touch)
   const joystickBase = document.createElement('div');
@@ -44,17 +53,17 @@ export function createTouchUI(): TouchUIElements {
   joystickThumb.id = 'joystick-thumb';
   joystickBase.appendChild(joystickThumb);
 
-  // Reload button
+  // Reload button (left top)
   const btnReload = createButton('R', 'reload', bs);
   btnReload.style.position = 'absolute';
-  btnReload.style.bottom = '155px';
-  btnReload.style.left = '20px';
+  btnReload.style.top = '12px';
+  btnReload.style.left = '62px';
 
-  // Interact button
+  // Interact button (left top)
   const btnInteract = createButton('E', 'interact', bs);
   btnInteract.style.position = 'absolute';
-  btnInteract.style.bottom = '215px';
-  btnInteract.style.left = '30px';
+  btnInteract.style.top = '12px';
+  btnInteract.style.left = '12px';
 
   // Weapon switch buttons (bottom center row)
   const weaponRow = document.createElement('div');
@@ -74,6 +83,7 @@ export function createTouchUI(): TouchUIElements {
   container.appendChild(rightZone);
   container.appendChild(joystickBase);
   container.appendChild(btnFire);
+  container.appendChild(btnFireLeft);
   container.appendChild(btnReload);
   container.appendChild(btnInteract);
   container.appendChild(weaponRow);
@@ -86,6 +96,7 @@ export function createTouchUI(): TouchUIElements {
     joystickBase,
     joystickThumb,
     btnFire,
+    btnFireLeft,
     btnReload,
     btnInteract,
     btnWeapon1,
