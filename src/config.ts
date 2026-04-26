@@ -198,4 +198,13 @@ export const CONFIG = {
     pickupAmmo: 0xf59e0b,
     pickupHealth: 0x4ade80,
   },
+
+  // Touch controls (mobile)
+  touch: {
+    moveDeadzone: 15,        // Movement joystick deadzone (px)
+    lookSensitivity: 0.4,    // Look sensitivity (lower than mouse 0.0022)
+    jumpSwipeThreshold: 80,  // Swipe-up jump threshold (px)
+    joystickRadius: 50,      // Joystick visual radius (px)
+    buttonSize: 48,          // Action button size (px)
+  },
 } as const;
