@@ -683,3 +683,119 @@ button:hover {
   font-size: 14px; border-radius: 4px;
 }
 #mp-back-menu:hover { background: #444; }
+
+/* ============ TOUCH CONTROLS ============ */
+
+#touch-ui {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  touch-action: none;
+}
+
+#touch-left {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+#touch-right {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* Dynamic joystick */
+#joystick-base {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 101;
+}
+
+#joystick-thumb {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Action buttons */
+.touch-btn {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(100, 100, 255, 0.35);
+  border: 2px solid rgba(100, 100, 255, 0.6);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: bold;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  pointer-events: auto;
+  touch-action: none;
+  z-index: 102;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch-btn[data-action="interact"] {
+  background: rgba(100, 200, 100, 0.35);
+  border-color: rgba(100, 200, 100, 0.6);
+}
+
+/* Weapon row */
+#touch-weapon-row {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  pointer-events: auto;
+  touch-action: none;
+  z-index: 102;
+}
+
+#touch-weapon-row .touch-btn {
+  position: relative;
+  background: rgba(255, 200, 50, 0.3);
+  border-color: rgba(255, 200, 50, 0.5);
+}
+
+#touch-weapon-row .touch-btn.weapon-active {
+  background: rgba(255, 200, 50, 0.55);
+  border-color: rgba(255, 200, 50, 0.8);
+}
+
+/* Hide touch UI on desktop */
+@media (hover: hover) and (pointer: fine) {
+  #touch-ui { display: none; }
+}
+
+/* Mobile: smaller HUD */
+@media (hover: none) and (pointer: coarse) {
+  .hud-item { padding: 6px 10px; }
+  .hud-item .value { font-size: 22px; }
+  .hud-item .label { font-size: 9px; }
+  .hud-top-left .value { font-size: 16px; }
+  .hud-top-right .value { font-size: 14px; }
+  #crosshair { width: 16px; height: 16px; }
+}
