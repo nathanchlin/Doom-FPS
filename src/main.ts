@@ -1,5 +1,8 @@
 import './style.css';
 import { Game } from './Game';
+import { Input } from './Input';
+import { createTouchUI } from './touch-ui';
+import { TouchControls } from './TouchControls';
 
 const container = document.getElementById('game')!;
 const intro = document.getElementById('intro')!;
@@ -9,6 +12,40 @@ const introStartBtn = document.getElementById('intro-start') as HTMLButtonElemen
 const modeSelect = document.getElementById('mode-select')!;
 
 const game = new Game(container);
+
+// ─── Mobile touch controls ───
+let touchControls: TouchControls | null = null;
+const WEAPON_NAMES = ['rifle', 'shotgun', 'sniper'] as const;
+
+if (Input.isTouchDevice()) {
+  const touchUI = createTouchUI();
+  touchControls = new TouchControls(
+    game.input,
+    touchUI,
+    (index: number) => {
+      game.switchWeapon(WEAPON_NAMES[index]);
+    },
+  );
+  game.input.setTouchControls(touchControls);
+  game.input.setLockedOverride(true);
+
+  // Adapt start overlay for mobile
+  const controlsDiv = overlay.querySelector('.controls');
+  if (controlsDiv) {
+    controlsDiv.innerHTML = `
+      <div>左侧滑动 → 移动</div>
+      <div>右侧滑动 → 视角</div>
+      <div>右侧按住 → 射击</div>
+      <div>右侧上滑 → 跳跃</div>
+      <div>[R] → 换弹</div>
+      <div>[E] → 交互</div>
+      <div>[1][2][3] → 切换武器</div>
+    `;
+  }
+  // Hide pointer lock hint
+  const hint = overlay.querySelector('.hint');
+  if (hint) (hint as HTMLElement).style.display = 'none';
+}
 
 // ─── Intro → Mode Select ───
 introStartBtn.addEventListener('click', () => {
@@ -26,8 +63,11 @@ startBtn.addEventListener('click', () => {
   game.sfx.unlock();
   overlay.style.display = 'none';
   if (game.isMultiplayer()) {
-    // Engine already started by game_start handler, just lock pointer
-    game.input.requestPointerLock();
+    if (Input.isTouchDevice()) {
+      // No pointer lock on mobile — engine already started by game_start handler
+    } else {
+      game.input.requestPointerLock();
+    }
   } else {
     game.start();
   }
@@ -69,6 +109,7 @@ document.getElementById('mp-back-menu')!.addEventListener('click', () => {
 
 // ─── Pointer lock ───
 document.addEventListener('pointerlockchange', () => {
+  if (Input.isTouchDevice()) return; // No pointer lock management on mobile
   if (document.pointerLockElement == null) {
     const dead = (document.getElementById('gameover') as HTMLElement).style.display === 'flex';
     const mpOver = (document.getElementById('mp-gameover') as HTMLElement).style.display === 'flex';
