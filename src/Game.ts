@@ -365,6 +365,17 @@ export class Game {
     return this.mode === 'multiplayer';
   }
 
+  /** Switch weapon by type name (used by touch controls). */
+  switchWeapon(type: WeaponType): void {
+    if (!this.weapon || !this.player) return;
+    const newMax = this.weapon.switchWeapon(type, this.playerBuffs.maxAmmoBonus);
+    this.player.ammo = newMax;
+    this.weapon.setDamageMultiplier(this.playerBuffs.damageMultiplier);
+    const weaponNames: Record<WeaponType, string> = { rifle: '步枪', shotgun: '霰弹枪', sniper: '狙击枪' };
+    this.hud.setWeapon(weaponNames[type]);
+    this.hud.setAmmo(this.player.ammo);
+  }
+
   getLocalTeam(): string {
     return this.localTeam;
   }
