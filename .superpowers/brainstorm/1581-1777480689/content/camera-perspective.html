@@ -1,0 +1,123 @@
+<h2>游戏视角</h2>
+<p class="subtitle">修仙空战的核心体验取决于你用什么视角来飞</p>
+
+<div class="cards">
+  <div class="card" data-choice="third-person" onclick="toggleSelect(this)">
+    <div class="card-image" style="min-height:200px; background:linear-gradient(180deg,#0a0a2e 0%,#1a0a3e 40%,#2a1a4e 100%); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+      <!-- Stars -->
+      <div style="position:absolute;top:15%;left:10%;width:3px;height:3px;background:#fff;border-radius:50%;box-shadow:0 0 4px #fff"></div>
+      <div style="position:absolute;top:25%;left:80%;width:2px;height:2px;background:#fff;border-radius:50%;box-shadow:0 0 3px #fff"></div>
+      <div style="position:absolute;top:60%;left:30%;width:2px;height:2px;background:#fff;border-radius:50%;box-shadow:0 0 3px #fff"></div>
+      <div style="position:absolute;top:10%;left:55%;width:3px;height:3px;background:#fff;border-radius:50%;box-shadow:0 0 4px #fff"></div>
+      <div style="position:absolute;top:45%;left:90%;width:2px;height:2px;background:#fff;border-radius:50%;box-shadow:0 0 3px #fff"></div>
+      <!-- Mountain silhouette -->
+      <div style="position:absolute;bottom:0;left:0;right:0;height:25%;background:linear-gradient(180deg,transparent,#0d1a0d);clip-path:polygon(0% 100%,0% 60%,8% 45%,18% 55%,30% 30%,45% 50%,55% 35%,68% 55%,80% 40%,92% 50%,100% 45%,100% 100%)"></div>
+      <!-- Flying character -->
+      <div style="position:relative; z-index:2;">
+        <!-- Aura -->
+        <div style="width:90px;height:120px;border-radius:50%;background:radial-gradient(ellipse,rgba(100,180,255,0.3),transparent);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:pulse 2s infinite"></div>
+        <!-- Character silhouette -->
+        <div style="font-size:64px;filter:drop-shadow(0 0 20px rgba(100,180,255,0.8));">🧙</div>
+        <!-- Sword trail -->
+        <div style="position:absolute;top:20px;right:-30px;width:60px;height:3px;background:linear-gradient(90deg,rgba(200,220,255,0.8),transparent);transform:rotate(-30deg);border-radius:2px;box-shadow:0 0 8px rgba(150,200,255,0.6)"></div>
+      </div>
+      <!-- Camera indicator -->
+      <div style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:4px;color:#88ccff;font-size:12px;font-family:monospace">📷 第三人称</div>
+      <!-- Speed lines -->
+      <div style="position:absolute;left:10px;top:40%;width:40px;height:1px;background:rgba(255,255,255,0.15);transform:rotate(-10deg)"></div>
+      <div style="position:absolute;left:5px;top:50%;width:60px;height:1px;background:rgba(255,255,255,0.1);transform:rotate(-5deg)"></div>
+      <div style="position:absolute;left:15px;top:60%;width:35px;height:1px;background:rgba(255,255,255,0.12);transform:rotate(-15deg)"></div>
+    </div>
+    <div class="card-body">
+      <h3>A. 第三人称追尾视角</h3>
+      <p>相机在角色身后跟随，能看到飞行姿态和特效。类似《高达VS》系列的经典视角。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>空间感知强，容易判断6轴方向</li><li>能看到自己的飞行姿态和技能特效</li><li>适合空战机动展示</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>需要额外构建角色3D模型</li><li>相机碰撞处理更复杂</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="first-person" onclick="toggleSelect(this)">
+    <div class="card-image" style="min-height:200px; background:linear-gradient(180deg,#0a0a2e 0%,#1a0a3e 40%,#2a1a4e 100%); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+      <!-- Stars -->
+      <div style="position:absolute;top:15%;left:10%;width:3px;height:3px;background:#fff;border-radius:50%;box-shadow:0 0 4px #fff"></div>
+      <div style="position:absolute;top:25%;left:80%;width:2px;height:2px;background:#fff;border-radius:50%;box-shadow:0 0 3px #fff"></div>
+      <div style="position:absolute;top:60%;left:30%;width:2px;height:2px;background:#fff;border-radius:50%;box-shadow:0 0 3px #fff"></div>
+      <!-- HUD overlay -->
+      <div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;">
+        <!-- Crosshair -->
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;">
+          <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(100,255,200,0.7)"></div>
+          <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(100,255,200,0.7)"></div>
+          <div style="position:absolute;top:50%;left:50%;width:8px;height:8px;border:1px solid rgba(100,255,200,0.5);border-radius:50%;transform:translate(-50%,-50%)"></div>
+        </div>
+        <!-- HP bar -->
+        <div style="position:absolute;bottom:20px;left:20px;right:60%;">
+          <div style="font-size:10px;color:rgba(100,255,200,0.7);margin-bottom:2px;font-family:monospace">灵力 ████████░░ 80%</div>
+        </div>
+        <!-- Altitude -->
+        <div style="position:absolute;right:20px;top:50%;transform:translateY(-50%);writing-mode:vertical-lr;font-size:10px;color:rgba(100,255,200,0.6);font-family:monospace">高度 ▲ 1200m</div>
+        <!-- Speed -->
+        <div style="position:absolute;bottom:20px;left:60%;right:20px;font-size:10px;color:rgba(100,255,200,0.7);font-family:monospace;text-align:center">飞剑速度 ████░░░ 580m/s</div>
+        <!-- Enemy indicator -->
+        <div style="position:absolute;top:30%;right:25%;width:20px;height:20px;border:2px solid rgba(255,80,80,0.6);border-radius:50%;transform:rotate(45deg)"></div>
+      </div>
+      <!-- Mountain silhouette -->
+      <div style="position:absolute;bottom:0;left:0;right:0;height:20%;background:linear-gradient(180deg,transparent,#0d1a0d);clip-path:polygon(0% 100%,0% 60%,10% 50%,25% 35%,40% 45%,55% 25%,70% 45%,85% 35%,100% 50%,100% 100%)"></div>
+      <!-- Enemy in distance -->
+      <div style="position:absolute;top:30%;left:35%;width:8px;height:8px;background:#ff4444;border-radius:50%;box-shadow:0 0 10px #ff4444,0 0 20px rgba(255,68,68,0.5)"></div>
+      <!-- Camera indicator -->
+      <div style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:4px;color:#88ffcc;font-size:12px;font-family:monospace">📷 第一人称</div>
+    </div>
+    <div class="card-body">
+      <h3>B. 第一人称驾驶舱视角</h3>
+      <p>直接复用 Doom-FPS 的 FPS 视角框架，玩家透过"飞剑驾驶员"的眼睛看世界。飞行时有座舱 HUD。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>最大程度复用 Doom-FPS 框架（Player.ts、相机）</li><li>沉浸感强，瞄准直觉</li><li>开发量最小</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>看不到飞行姿态</li><li>6轴空间感知较难</li><li>缺少"高达"的帅气感</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="card-image" style="min-height:200px; background:linear-gradient(180deg,#0a0a2e 0%,#1a0a3e 40%,#2a1a4e 100%); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+      <!-- Stars -->
+      <div style="position:absolute;top:15%;left:10%;width:3px;height:3px;background:#fff;border-radius:50%;box-shadow:0 0 4px #fff"></div>
+      <div style="position:absolute;top:25%;left:80%;width:2px;height:2px;background:#fff;border-radius:50%;box-shadow:0 0 3px #fff"></div>
+      <!-- Split line -->
+      <div style="position:absolute;top:0;left:50%;width:2px;height:100%;background:rgba(255,255,255,0.3);z-index:5"></div>
+      <!-- Left: Third person -->
+      <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:4px;color:#88ccff;font-size:11px;font-family:monospace;z-index:3">探索模式</div>
+      <!-- Right: First person -->
+      <div style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:4px;color:#88ffcc;font-size:11px;font-family:monospace;z-index:3">战斗模式</div>
+      <!-- Left side: character flying -->
+      <div style="position:absolute;left:25%;top:45%;transform:translate(-50%,-50%);font-size:36px;filter:drop-shadow(0 0 10px rgba(100,180,255,0.6));z-index:2">🧙</div>
+      <!-- Right side: crosshair -->
+      <div style="position:absolute;top:50%;left:75%;transform:translate(-50%,-50%);z-index:2">
+        <div style="width:24px;height:24px;border:1px solid rgba(100,255,200,0.7);border-radius:50%"></div>
+        <div style="position:absolute;top:50%;left:-4px;right:-4px;height:1px;background:rgba(100,255,200,0.5)"></div>
+        <div style="position:absolute;left:50%;top:-4px;bottom:-4px;width:1px;background:rgba(100,255,200,0.5)"></div>
+      </div>
+      <!-- Mountain silhouette -->
+      <div style="position:absolute;bottom:0;left:0;right:0;height:20%;background:linear-gradient(180deg,transparent,#0d1a0d);clip-path:polygon(0% 100%,0% 60%,10% 50%,25% 35%,40% 45%,55% 25%,70% 45%,85% 35%,100% 50%,100% 100%);z-index:1"></div>
+      <!-- Switch indicator -->
+      <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);padding:4px 14px;border-radius:12px;color:#ffcc44;font-size:11px;font-family:monospace;z-index:3">按 V 切换视角</div>
+    </div>
+    <div class="card-body">
+      <h3>C. 混合视角（推荐）</h3>
+      <p>第三人称用于飞行探索，按键切换到第一人称进行精确瞄准战斗。类似《皇牌空战》的视角切换。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>兼具两种视角的优势</li><li>飞行时帅气，战斗时精准</li><li>最符合"高达飞行游戏"的体验</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>开发量最大（两套相机+控制）</li><li>视角切换需要平滑过渡动画</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes pulse {
+  0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 0.3; }
+  50% { transform: translate(-50%,-50%) scale(1.3); opacity: 0.6; }
+}
+</style>

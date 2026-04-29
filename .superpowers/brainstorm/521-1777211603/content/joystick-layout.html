@@ -1,0 +1,68 @@
+<h2>虚拟摇杆布局方案</h2>
+<p class="subtitle">选择你偏好的双摇杆 FPS 布局 — 点击选中后告诉我</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>经典对称布局</h3>
+      <p>左下角移动摇杆，右下角视角摇杆，右侧中间射击按钮（大按钮），左侧中间换弹/互动按钮。HUD 信息（血量/弹药）在顶部。</p>
+      <div style="margin-top:12px;background:#1a1a2e;border-radius:12px;padding:16px;position:relative;height:340px;max-width:200px;margin-left:auto;margin-right:auto;border:2px solid #333">
+        <div style="position:absolute;top:8px;left:8px;background:rgba(200,50,50,0.8);padding:4px 8px;border-radius:4px;font-size:11px;color:#fff">HP 100</div>
+        <div style="position:absolute;top:8px;right:8px;background:rgba(200,180,50,0.8);padding:4px 8px;border-radius:4px;font-size:11px;color:#fff">30/30</div>
+        <div style="position:absolute;bottom:20px;left:10px;width:90px;height:90px;border:3px solid rgba(255,255,255,0.4);border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <div style="width:36px;height:36px;background:rgba(255,255,255,0.5);border-radius:50%"></div>
+        </div>
+        <div style="position:absolute;bottom:20px;right:10px;width:90px;height:90px;border:3px solid rgba(255,255,255,0.4);border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <div style="width:36px;height:36px;background:rgba(255,255,255,0.5);border-radius:50%"></div>
+        </div>
+        <div style="position:absolute;bottom:40px;right:115px;width:60px;height:60px;background:rgba(255,60,60,0.7);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:bold;border:2px solid rgba(255,100,100,0.9)">FIRE</div>
+        <div style="position:absolute;bottom:120px;left:15px;width:44px;height:44px;background:rgba(100,100,255,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;border:2px solid rgba(100,100,255,0.8)">R</div>
+        <div style="position:absolute;bottom:120px;left:65px;width:44px;height:44px;background:rgba(100,200,100,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;border:2px solid rgba(100,200,100,0.8)">E</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>射击即摇杆</h3>
+      <p>左下角移动摇杆，右侧整个区域既是视角摇杆也是射击键 — 滑动瞄准，松开自动射击（或持续按住时自动射击）。更简洁，拇指不累。</p>
+      <div style="margin-top:12px;background:#1a1a2e;border-radius:12px;padding:16px;position:relative;height:340px;max-width:200px;margin-left:auto;margin-right:auto;border:2px solid #333">
+        <div style="position:absolute;top:8px;left:8px;background:rgba(200,50,50,0.8);padding:4px 8px;border-radius:4px;font-size:11px;color:#fff">HP 100</div>
+        <div style="position:absolute;top:8px;right:8px;background:rgba(200,180,50,0.8);padding:4px 8px;border-radius:4px;font-size:11px;color:#fff">30/30</div>
+        <div style="position:absolute;bottom:20px;left:10px;width:90px;height:90px;border:3px solid rgba(255,255,255,0.4);border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <div style="width:36px;height:36px;background:rgba(255,255,255,0.5);border-radius:50%"></div>
+        </div>
+        <div style="position:absolute;top:50%;right:0;width:50%;height:60%;background:rgba(255,60,60,0.15);border-left:2px dashed rgba(255,100,100,0.5);display:flex;align-items:center;justify-content:center;flex-direction:column">
+          <div style="color:rgba(255,255,255,0.3);font-size:10px;margin-bottom:4px">滑动瞄准</div>
+          <div style="color:rgba(255,100,100,0.5);font-size:10px">按住自动射击</div>
+        </div>
+        <div style="position:absolute;bottom:60px;left:15px;width:44px;height:44px;background:rgba(100,100,255,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;border:2px solid rgba(100,100,255,0.8)">R</div>
+        <div style="position:absolute;bottom:115px;left:15px;width:44px;height:44px;background:rgba(100,200,100,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;border:2px solid rgba(100,200,100,0.8)">E</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>全触控区域</h3>
+      <p>左半屏任何位置按下滑出即移动摇杆（动态位置），右半屏任何位置按下滑出即视角+自动射击。按钮更少，适合大屏手机。</p>
+      <div style="margin-top:12px;background:#1a1a2e;border-radius:12px;padding:16px;position:relative;height:340px;max-width:200px;margin-left:auto;margin-right:auto;border:2px solid #333">
+        <div style="position:absolute;top:8px;left:8px;background:rgba(200,50,50,0.8);padding:4px 8px;border-radius:4px;font-size:11px;color:#fff">HP 100</div>
+        <div style="position:absolute;top:8px;right:8px;background:rgba(200,180,50,0.8);padding:4px 8px;border-radius:4px;font-size:11px;color:#fff">30/30</div>
+        <div style="position:absolute;top:40px;left:0;width:50%;height:calc(100% - 50px);background:rgba(100,200,100,0.1);border-right:2px dashed rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center">
+          <div style="color:rgba(255,255,255,0.3);font-size:10px">任意位置按下 → 移动摇杆</div>
+        </div>
+        <div style="position:absolute;top:40px;right:0;width:50%;height:calc(100% - 50px);background:rgba(255,60,60,0.1);display:flex;align-items:center;justify-content:center">
+          <div style="color:rgba(255,255,255,0.3);font-size:10px">任意位置按下 → 瞄准+射击</div>
+        </div>
+        <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:8px">
+          <div style="width:44px;height:44px;background:rgba(100,100,255,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;border:2px solid rgba(100,100,255,0.8)">R</div>
+          <div style="width:44px;height:44px;background:rgba(100,200,100,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;border:2px solid rgba(100,200,100,0.8)">E</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

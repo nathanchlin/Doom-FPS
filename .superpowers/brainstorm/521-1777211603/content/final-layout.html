@@ -1,0 +1,61 @@
+<h2>最终布局确认</h2>
+<p class="subtitle">方案 B 完整版：射击即摇杆 + 跳跃手势 + 武器切换 + 动态摇杆</p>
+
+<div style="margin:20px auto;background:#0d0d15;border-radius:16px;padding:20px;position:relative;height:520px;max-width:280px;border:3px solid #444;box-shadow:0 0 30px rgba(0,0,0,0.5)">
+  <!-- HUD top -->
+  <div style="position:absolute;top:8px;left:12px;display:flex;gap:6px;align-items:center">
+    <div style="background:rgba(200,50,50,0.85);padding:5px 10px;border-radius:4px;font-size:12px;color:#fff;font-weight:bold">HP 100</div>
+    <div style="background:rgba(60,60,200,0.85);padding:5px 10px;border-radius:4px;font-size:12px;color:#fff;font-weight:bold">Shield</div>
+  </div>
+  <div style="position:absolute;top:8px;right:12px;background:rgba(200,180,50,0.85);padding:5px 10px;border-radius:4px;font-size:12px;color:#fff;font-weight:bold">30/30</div>
+  <div style="position:absolute;top:32px;left:50%;transform:translateX(-50%)">
+    <div style="width:20px;height:20px;position:relative">
+      <div style="position:absolute;top:50%;left:0;right:0;height:2px;background:rgba(255,255,255,0.6)"></div>
+      <div style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,0.6)"></div>
+    </div>
+  </div>
+
+  <!-- Right zone: aim + auto-fire -->
+  <div style="position:absolute;top:60px;right:0;width:55%;height:calc(100% - 70px);background:rgba(255,60,60,0.08);border-left:2px dashed rgba(255,100,100,0.25);display:flex;align-items:center;justify-content:center;flex-direction:column;pointer-events:none">
+    <div style="color:rgba(255,255,255,0.2);font-size:11px;text-align:center;line-height:1.6">
+      滑动 → 瞄准<br>
+      按住 → 自动射击<br>
+      <span style="color:rgba(255,200,100,0.3)">上滑 → 跳跃</span>
+    </div>
+  </div>
+
+  <!-- Left joystick (shown as semi-transparent, "dynamic") -->
+  <div style="position:absolute;bottom:30px;left:20px;width:100px;height:100px;border:2.5px solid rgba(255,255,255,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center">
+    <div style="width:40px;height:40px;background:rgba(255,255,255,0.3);border-radius:50%"></div>
+  </div>
+  <div style="position:absolute;bottom:55px;left:45px;color:rgba(255,255,255,0.15);font-size:8px">动态显示</div>
+
+  <!-- Buttons: R (reload) -->
+  <div style="position:absolute;bottom:155px;left:20px;width:48px;height:48px;background:rgba(100,100,255,0.45);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:bold;border:2px solid rgba(100,100,255,0.7)">R</div>
+
+  <!-- Buttons: E (interact) -->
+  <div style="position:absolute;bottom:215px;left:30px;width:48px;height:48px;background:rgba(100,200,100,0.45);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:bold;border:2px solid rgba(100,200,100,0.7)">E</div>
+
+  <!-- Weapon switch -->
+  <div style="position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;gap:6px;align-items:center">
+    <div style="background:rgba(255,200,50,0.5);padding:6px 12px;border-radius:6px;font-size:10px;color:#fff;border:1.5px solid rgba(255,200,50,0.7);font-weight:bold">1</div>
+    <div style="background:rgba(255,200,50,0.3);padding:6px 12px;border-radius:6px;font-size:10px;color:#fff;border:1.5px solid rgba(255,200,50,0.4)">2</div>
+    <div style="background:rgba(255,200,50,0.3);padding:6px 12px;border-radius:6px;font-size:10px;color:#fff;border:1.5px solid rgba(255,200,50,0.4)">3</div>
+  </div>
+
+  <!-- Weapon name -->
+  <div style="position:absolute;bottom:70px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.4);font-size:10px">Rifle</div>
+</div>
+
+<div style="margin-top:16px;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;max-width:400px;margin-left:auto;margin-right:auto">
+  <h3 style="margin-top:0;color:#8be9fd;font-size:14px">操控说明</h3>
+  <ul style="font-size:12px;line-height:1.8;color:#ccc;padding-left:16px;margin:0">
+    <li><strong>左侧任意位置</strong>按下 → 移动摇杆出现（动态位置）</li>
+    <li><strong>右侧任意位置</strong>按下并滑动 → 视角控制</li>
+    <li><strong>右侧按住</strong> → 自动射击</li>
+    <li><strong>右侧上滑</strong> → 跳跃</li>
+    <li><strong>R 按钮</strong> → 换弹</li>
+    <li><strong>E 按钮</strong> → 互动（开门等）</li>
+    <li><strong>1/2/3 按钮</strong> → 切换武器</li>
+  </ul>
+</div>

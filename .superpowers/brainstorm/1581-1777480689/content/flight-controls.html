@@ -1,0 +1,121 @@
+<h2>6轴飞行控制方案</h2>
+<p class="subtitle">"6轴"指 X/Y/Z 平移 + 偏航/俯仰/翻滚。不同方案决定了飞行的手感和复杂度</p>
+
+<div class="cards">
+  <div class="card" data-choice="simplified-6dof" onclick="toggleSelect(this)">
+    <div class="card-image" style="min-height:220px; background:#0a0a1a; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; padding:16px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; font-size:12px; font-family:monospace;">
+        <!-- Movement controls -->
+        <div style="background:rgba(100,180,255,0.1); border:1px solid rgba(100,180,255,0.3); border-radius:6px; padding:10px;">
+          <div style="color:#88ccff; font-weight:bold; margin-bottom:6px;">移动 (方向)</div>
+          <div style="color:#aaa;">
+            <div>W/S — 前进/后退</div>
+            <div>A/D — 左右平移</div>
+            <div>Space — 上升</div>
+            <div>Shift — 下降</div>
+          </div>
+        </div>
+        <!-- Orientation controls -->
+        <div style="background:rgba(100,255,200,0.1); border:1px solid rgba(100,255,200,0.3); border-radius:6px; padding:10px;">
+          <div style="color:#88ffcc; font-weight:bold; margin-bottom:6px;">朝向 (旋转)</div>
+          <div style="color:#aaa;">
+            <div>鼠标 — 偏航+俯仰</div>
+            <div>Q/E — 翻滚</div>
+          </div>
+        </div>
+        <!-- Visual: plane axes -->
+        <div style="grid-column:span 2; display:flex; justify-content:center; margin-top:4px;">
+          <div style="position:relative; width:120px; height:80px;">
+            <!-- Yaw arc -->
+            <div style="position:absolute;bottom:0;left:50%;width:80px;height:40px;border-bottom:2px solid rgba(100,180,255,0.5);border-left:2px solid rgba(100,180,255,0.5);border-right:2px solid rgba(100,180,255,0.5);border-radius:0 0 40px 40px;transform:translateX(-50%)"></div>
+            <div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);color:#88ccff;font-size:9px;">偏航</div>
+            <!-- Pitch arc -->
+            <div style="position:absolute;top:50%;left:50%;width:50px;height:60px;border-right:2px solid rgba(100,255,200,0.5);border-top:2px solid rgba(100,255,200,0.5);border-bottom:2px solid rgba(100,255,200,0.5);border-radius:0 30px 30px 0;transform:translate(-20%,-50%)"></div>
+            <div style="position:absolute;top:50%;right:-16px;transform:translateY(-50%);color:#88ffcc;font-size:9px;">俯仰</div>
+            <!-- Roll arc -->
+            <div style="position:absolute;top:50%;left:50%;width:60px;height:60px;border:2px solid rgba(255,200,100,0.4);border-radius:50%;transform:translate(-50%,-50%);border-left-color:transparent;border-right-color:transparent"></div>
+            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#ffcc88;font-size:9px;">翻滚</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 简化 6DOF（推荐）</h3>
+      <p>鼠标控制偏航+俯仰，键盘控制上下和平移，Q/E翻滚。飞行方向由朝向决定，推W朝看的方向飞。上手快，有飞行感。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>直觉易学，类似传统飞行游戏</li><li>鼠标瞄准自然，战斗手感好</li><li>键盘映射清晰</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>翻滚需要额外按键，新手可能忽略</li><li>不是"真"6自由度（移动被锁定在朝向平面）</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="full-6dof" onclick="toggleSelect(this)">
+    <div class="card-image" style="min-height:220px; background:#0a0a1a; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; padding:16px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; font-size:12px; font-family:monospace;">
+        <div style="background:rgba(255,150,100,0.1); border:1px solid rgba(255,150,100,0.3); border-radius:6px; padding:10px;">
+          <div style="color:#ffaa88; font-weight:bold; margin-bottom:6px;">移动 (惯性)</div>
+          <div style="color:#aaa;">
+            <div>W/S — 推进/制动</div>
+            <div>A/D — 横滚（翻滚）</div>
+            <div>Space — 上升推力</div>
+            <div>Shift — 下降推力</div>
+          </div>
+        </div>
+        <div style="background:rgba(255,150,100,0.1); border:1px solid rgba(255,150,100,0.3); border-radius:6px; padding:10px;">
+          <div style="color:#ffaa88; font-weight:bold; margin-bottom:6px;">朝向</div>
+          <div style="color:#aaa;">
+            <div>鼠标 — 俯仰+偏航</div>
+            <div>无独立翻滚键</div>
+            <div style="color:#ff6644; margin-top:4px;">惯性物理：松手后继续飘</div>
+          </div>
+        </div>
+        <div style="grid-column:span 2; text-align:center; color:#ffaa88; font-size:11px; background:rgba(255,100,50,0.1); border-radius:4px; padding:8px;">
+          物理模拟：推力→加速度→速度→阻力<br>6个自由度完全独立，无锁定
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 完全 6DOF 物理模拟</h3>
+      <p>真正的6自由度——推力产生加速度，有惯性和阻力。松开按键后角色不会立刻停下。类似《星际战机》的飞行手感。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>最真实的6轴飞行体验</li><li>高级玩家可以做花式机动</li><li>空间感最强</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>学习曲线陡峭，新手容易失控</li><li>物理调参复杂</li><li>战斗瞄准困难（惯性让你飘过目标）</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="arcade-flight" onclick="toggleSelect(this)">
+    <div class="card-image" style="min-height:220px; background:#0a0a1a; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; padding:16px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; font-size:12px; font-family:monospace;">
+        <div style="background:rgba(200,100,255,0.1); border:1px solid rgba(200,100,255,0.3); border-radius:6px; padding:10px;">
+          <div style="color:#cc88ff; font-weight:bold; margin-bottom:6px;">移动 (自动)</div>
+          <div style="color:#aaa;">
+            <div>W/S — 加速/减速</div>
+            <div>A/D — 左右转弯</div>
+            <div>Space — 急速上升</div>
+            <div>Shift — 急速下降</div>
+          </div>
+        </div>
+        <div style="background:rgba(200,100,255,0.1); border:1px solid rgba(200,100,255,0.3); border-radius:6px; padding:10px;">
+          <div style="color:#cc88ff; font-weight:bold; margin-bottom:6px;">朝向</div>
+          <div style="color:#aaa;">
+            <div>鼠标 — 瞄准目标</div>
+            <div>自动翻滚（转弯时）</div>
+            <div style="color:#cc66ff; margin-top:4px;">角色自动朝鼠标方向飞</div>
+          </div>
+        </div>
+        <div style="grid-column:span 2; text-align:center; color:#cc88ff; font-size:11px; background:rgba(200,100,255,0.1); border-radius:4px; padding:8px;">
+          街机风格：角色自动跟随鼠标方向飞行<br>转弯时有自动倾斜动画
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 街机飞行</h3>
+      <p>最简单的方案——角色自动朝鼠标方向飞，WASD控制速度和辅助转向。转弯时有自动翻滚动画。类似《皇牌空战》的简化版。</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>优点</h4><ul><li>最容易上手</li><li>战斗时可以专注瞄准</li><li>视觉效果好（自动倾斜动画）</li></ul></div>
+        <div class="cons"><h4>缺点</h4><ul><li>自由度最低，不够"6轴"</li><li>缺少手动翻滚的操控感</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
