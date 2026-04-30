@@ -1,84 +1,207 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>游戏大厅</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { overflow: hidden; background: #000; font-family: 'Courier New', monospace; color: #fff; }
-    #game { width: 100vw; height: 100vh; }
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>末日 · 迷宫 · Three.js</title>
+  </head>
+  <body>
+    <div id="game"></div>
 
-    #main-menu {
-      position: fixed; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #0a0a1e 0%, #1a0a2e 50%, #0a1a1e 100%);
-      z-index: 1000;
-    }
-    #main-menu h1 { font-size: 36px; color: #fff; margin-bottom: 8px; letter-spacing: 4px; }
-    #main-menu .subtitle { font-size: 14px; color: #666; margin-bottom: 48px; }
-    .game-cards { display: flex; gap: 32px; }
-    .game-card {
-      width: 280px; padding: 32px 24px; border: 1px solid #333; border-radius: 12px;
-      background: rgba(255,255,255,0.03); cursor: pointer; transition: all 0.3s;
-      text-align: center;
-    }
-    .game-card:hover { border-color: #daa520; background: rgba(218,165,32,0.08); transform: translateY(-4px); }
-    .game-card h2 { font-size: 24px; margin-bottom: 12px; }
-    .game-card p { font-size: 13px; color: #888; line-height: 1.6; }
-    .game-card .tag { display: inline-block; margin-top: 16px; padding: 4px 12px; border-radius: 4px; font-size: 11px; }
+    <!-- Crosshair -->
+    <div id="crosshair"></div>
 
-    #btn-doom h2 { color: #cc4444; }
-    #btn-doom .tag { background: rgba(204,68,68,0.2); color: #cc4444; border: 1px solid #cc4444; }
-    #btn-xianxia h2 { color: #daa520; }
-    #btn-xianxia .tag { background: rgba(218,165,32,0.2); color: #daa520; border: 1px solid #daa520; }
-
-    #game-overlay {
-      position: fixed; inset: 0; display: none; flex-direction: column;
-      align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.85); z-index: 500; color: #fff;
-    }
-    #game-start {
-      padding: 14px 48px; font-size: 18px; cursor: pointer;
-      background: transparent; color: #daa520; border: 1px solid #daa520;
-      border-radius: 4px;
-    }
-    #game-start:hover { background: rgba(218,165,32,0.15); }
-    #back-to-menu {
-      position: fixed; top: 12px; left: 12px; z-index: 600;
-      padding: 6px 16px; font-size: 12px; cursor: pointer;
-      background: rgba(0,0,0,0.6); color: #888; border: 1px solid #444;
-      border-radius: 4px; display: none;
-    }
-    #back-to-menu:hover { color: #fff; border-color: #888; }
-  </style>
-</head>
-<body>
-  <div id="game"></div>
-
-  <div id="main-menu">
-    <h1>GAME HUB</h1>
-    <div class="subtitle">选择游戏开始</div>
-    <div class="game-cards">
-      <div class="game-card" id="btn-doom">
-        <h2>末日迷宫</h2>
-        <p>第一人称迷宫射击<br/>探索随机迷宫 · 开门战斗<br/>Roguelike 层级推进</p>
-        <span class="tag">DOOM FPS</span>
+    <!-- HUD -->
+    <div id="hud">
+      <div class="hud-item hud-left">
+        <div class="label">生命</div>
+        <div class="value" id="hp">100</div>
       </div>
-      <div class="game-card" id="btn-xianxia">
-        <h2>仙侠空战</h2>
-        <p>6自由度御剑飞行<br/>灵力射线 · 追踪符箓<br/>浮空仙宫 · Boss 对决</p>
-        <span class="tag">AIR COMBAT</span>
+      <div class="hud-item hud-right">
+        <div class="label">弹药</div>
+        <div class="value" id="ammo">30</div>
+      </div>
+      <div class="hud-item hud-top-left">
+        <div class="label">层数</div>
+        <div class="value" id="floor">1</div>
+      </div>
+      <div class="hud-item hud-top-right">
+        <div class="label">门</div>
+        <div class="value" id="doors">0 / 0</div>
+      </div>
+      <div class="hud-item hud-weapon">
+        <div class="label">武器</div>
+        <div class="value" id="weapon-name">步枪</div>
+      </div>
+      <div class="hud-item hud-shield" id="shield-indicator" style="display:none;">
+        <div class="label">护盾</div>
+        <div class="value" id="shield-hits">3</div>
+      </div>
+      <div class="hud-item hud-center-top" id="room-status" style="display:none;">
+        <div class="label">敌人</div>
+        <div class="value" id="room-enemies">0</div>
       </div>
     </div>
-  </div>
 
-  <div id="game-overlay">
-    <button id="game-start">点击开始</button>
-  </div>
+    <!-- Interact prompt -->
+    <div id="interact-prompt" style="display:none;"></div>
 
-  <button id="back-to-menu">&larr; 返回菜单</button>
+    <!-- Floor transition overlay -->
+    <div id="floor-transition" style="display:none;">
+      <div class="floor-text" id="floor-text">第 1 层</div>
+    </div>
 
-  <script type="module" src="/src/main.ts"></script>
-</body>
+    <!-- Fade overlay for room transitions -->
+    <div id="fade-overlay"></div>
+
+    <!-- Card picker overlay -->
+    <div id="card-picker" style="display:none;">
+      <div class="card-picker-title">选择一张卡牌</div>
+      <div id="card-container" class="card-container"></div>
+    </div>
+
+    <!-- Damage flash -->
+    <div id="damage"></div>
+
+    <!-- Hit marker -->
+    <div id="hitmarker"></div>
+
+    <!-- Feature intro overlay (shown first) -->
+    <div id="intro">
+      <div class="intro-content">
+        <h1 class="intro-title">末日迷宫</h1>
+        <p class="intro-subtitle">无尽 Roguelike 迷宫射击</p>
+
+        <div class="intro-sections">
+          <div class="intro-section">
+            <div class="intro-icon">🏰</div>
+            <div class="intro-section-title">迷宫探索</div>
+            <div class="intro-section-desc">每一层都是随机生成的迷宫走廊。找到门并打开它们——门后可能是战斗、宝箱或通往下一层的出口。</div>
+          </div>
+
+          <div class="intro-section">
+            <div class="intro-icon">⚔️</div>
+            <div class="intro-section-title">战斗房间</div>
+            <div class="intro-section-desc">进入门后可能遭遇敌人。消灭所有敌人后获得宝箱奖励。小心走廊里的巡逻怪和地面红色危险区域！</div>
+          </div>
+
+          <div class="intro-section">
+            <div class="intro-icon">🃏</div>
+            <div class="intro-section-title">卡牌升级</div>
+            <div class="intro-section-desc">每通过一层，从三张卡中选择一张：新武器（步枪/霰弹枪/狙击枪）、永久属性提升或特殊效果。打造你的 Build！</div>
+          </div>
+
+          <div class="intro-section">
+            <div class="intro-icon">💀</div>
+            <div class="intro-section-title">硬核生存</div>
+            <div class="intro-section-desc">弹药和血量只能通过宝箱补给，跨层保留。死亡即重来。你能走多远？</div>
+          </div>
+        </div>
+
+        <div class="intro-enemies">
+          <div class="intro-section-title" style="margin-bottom: 12px;">敌人图鉴</div>
+          <div class="intro-enemy-list">
+            <div class="intro-enemy"><span class="enemy-dot" style="background:#f0f0f0;"></span> <b>标准型</b> — 远程射击，均衡型</div>
+            <div class="intro-enemy"><span class="enemy-dot" style="background:#cc3333;"></span> <b>冲锋型</b> — 快速近战，接触伤害</div>
+            <div class="intro-enemy"><span class="enemy-dot" style="background:#666666;"></span> <b>重装型</b> — 高血量高伤害，第3层出现</div>
+            <div class="intro-enemy"><span class="enemy-dot" style="background:#664488;"></span> <b>巡逻型</b> — 走廊巡逻，血量极厚</div>
+          </div>
+        </div>
+
+        <button id="intro-start">进入游戏</button>
+      </div>
+    </div>
+
+    <!-- Start overlay -->
+    <div id="overlay" style="display:none;">
+      <div class="panel">
+        <h1>末日 <span class="sub">· 迷宫</span></h1>
+        <p class="tag">Three.js · TypeScript · Vite</p>
+        <div class="controls">
+          <div><kbd>WASD</kbd> 移动</div>
+          <div><kbd>MOUSE</kbd> 视角</div>
+          <div><kbd>LMB</kbd> 射击</div>
+          <div><kbd>SPACE</kbd> 跳跃</div>
+          <div><kbd>SHIFT</kbd> 冲刺</div>
+          <div><kbd>E</kbd> 交互</div>
+          <div><kbd>R</kbd> 换弹</div>
+          <div><kbd>ESC</kbd> 暂停</div>
+        </div>
+        <button id="start">点击开始</button>
+        <p class="hint">鼠标将被锁定，按 ESC 释放。</p>
+      </div>
+    </div>
+
+    <!-- GameOver overlay -->
+    <div id="gameover" class="end-overlay">
+      <div class="panel">
+        <h1 class="lose">你死了</h1>
+        <p class="sub" id="gameover-sub"></p>
+        <div class="stats" id="gameover-stats"></div>
+        <button id="gameover-restart">重新开始</button>
+      </div>
+    </div>
+
+    <!-- Mode selection overlay -->
+    <div id="mode-select" style="display:none;">
+      <div class="panel">
+        <h1>末日 <span class="sub">· 迷宫</span></h1>
+        <button id="btn-singleplayer">单人游戏</button>
+        <button id="btn-create-room">创建房间</button>
+        <div class="join-row">
+          <input id="join-ip" type="text" placeholder="主机 IP (如 192.168.1.100)" />
+          <button id="btn-join-room">加入房间</button>
+        </div>
+        <div class="join-row">
+          <input id="player-name" type="text" placeholder="你的昵称" value="Player" />
+        </div>
+        <a id="btn-download-server" href="doom-server.zip" download class="download-btn">下载服务器程序</a>
+      </div>
+    </div>
+
+    <!-- Lobby overlay -->
+    <div id="lobby" style="display:none;">
+      <div class="panel">
+        <h2 id="lobby-title">房间</h2>
+        <div id="lobby-ip" class="lobby-ip"></div>
+        <div id="lobby-players"></div>
+        <div id="lobby-settings">
+          <label>团队积分目标: <select id="lobby-kill-target">
+            <option value="500">500</option>
+            <option value="1000" selected>1000</option>
+            <option value="2000">2000</option>
+          </select></label>
+          <label>时间限制: <select id="lobby-time-limit">
+            <option value="300">5 分钟</option>
+            <option value="600" selected>10 分钟</option>
+            <option value="900">15 分钟</option>
+          </select></label>
+        </div>
+        <button id="lobby-ready">就绪</button>
+        <button id="lobby-start" style="display:none;">开始游戏</button>
+      </div>
+    </div>
+
+    <!-- Multiplayer HUD -->
+    <div id="mp-hud" style="display:none;">
+      <div id="team-score-bar"></div>
+      <div id="kill-feed"></div>
+      <div id="match-timer"></div>
+      <div id="mp-leaderboard"></div>
+      <div id="respawn-countdown" style="display:none;"></div>
+      <div id="shuffle-notification" style="display:none;"></div>
+    </div>
+
+    <!-- Game over (multiplayer) -->
+    <div id="mp-gameover" style="display:none;">
+      <div class="panel">
+        <h1 id="mp-winner"></h1>
+        <div id="mp-scoreboard-final"></div>
+        <button id="mp-back-menu">返回菜单</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>
