@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config';
 import type { FlightController } from './FlightController';
-import type { Sfx } from '../Sfx';
+import type { Sfx } from '../../shared/Sfx';
 
 export type WeaponSlot = 'beam' | 'missile' | 'sword';
 

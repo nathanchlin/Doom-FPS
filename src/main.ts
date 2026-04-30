@@ -1,28 +1,46 @@
 import './style.css';
-import { Game } from './Game';
 
 const container = document.getElementById('game')!;
-const overlay = document.getElementById('overlay')!;
-const startBtn = document.getElementById('start') as HTMLButtonElement;
+const mainMenu = document.getElementById('main-menu')!;
+const backBtn = document.getElementById('back-to-menu')!;
 
-const game = new Game(container);
+let currentCleanup: (() => void) | null = null;
 
-startBtn.addEventListener('click', () => {
-  overlay.style.display = 'none';
-  game.start();
+document.getElementById('btn-doom')!.addEventListener('click', async () => {
+  mainMenu.style.display = 'none';
+  backBtn.style.display = 'block';
+  const { startDoom, stopDoom } = await import('./doom/main');
+  currentCleanup = stopDoom;
+  startDoom(container);
 });
 
-document.addEventListener('pointerlockchange', () => {
-  if (document.pointerLockElement == null) {
-    overlay.style.display = 'flex';
-    startBtn.textContent = '点击继续';
-  } else {
-    overlay.style.display = 'none';
+document.getElementById('btn-xianxia')!.addEventListener('click', async () => {
+  mainMenu.style.display = 'none';
+  backBtn.style.display = 'block';
+  const { startXianxia, stopXianxia } = await import('./xianxia/main');
+  currentCleanup = stopXianxia;
+  startXianxia(container);
+});
+
+backBtn.addEventListener('click', () => {
+  if (currentCleanup) {
+    currentCleanup();
+    currentCleanup = null;
   }
+  // Clear game container
+  container.innerHTML = '';
+  // Hide game overlay
+  const overlay = document.getElementById('game-overlay');
+  if (overlay) overlay.style.display = 'none';
+  // Show menu
+  mainMenu.style.display = 'flex';
+  backBtn.style.display = 'none';
+  // Exit pointer lock
+  document.exitPointerLock?.();
 });
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
-    game.dispose();
+    if (currentCleanup) currentCleanup();
   });
 }

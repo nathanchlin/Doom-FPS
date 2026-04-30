@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config';
-import type { Input } from '../Input';
+import type { Input } from '../../shared/Input';
 
 /**
  * FlightController — 6DOF physics flight with thrust, drag, angular velocity.
@@ -131,29 +131,26 @@ export class FlightController {
 
     this.position.addScaledVector(this.velocity, dt);
 
-    // Rotation from mouse input
+    // Rotation from mouse input — direct application, no accumulation
     const { dx, dy } = this.input.consumeMouseDelta();
-    const pitchInput = -dy * this.mouseSens;
-    const yawInput = -dx * this.mouseSens;
+    // Mouse directly drives yaw/pitch (responsive, no inertia feel)
+    const pitchDirect = -dy * this.mouseSens;
+    const yawDirect = -dx * this.mouseSens;
+
+    // Q/E roll uses angular velocity with drag
     let rollInput = 0;
     if (this.input.isDown('q')) rollInput += cfg.angularThrust * dt;
     if (this.input.isDown('e')) rollInput -= cfg.angularThrust * dt;
-
-    this.angularVelocity.x += pitchInput * cfg.angularThrust;
-    this.angularVelocity.y += yawInput * cfg.angularThrust;
     this.angularVelocity.z += rollInput;
+    this.angularVelocity.z *= Math.pow(cfg.angularDrag, dt * 60);
 
-    this.angularVelocity.multiplyScalar(Math.pow(cfg.angularDrag, dt * 60));
+    // Clamp roll angular speed
+    this.angularVelocity.z = Math.max(-cfg.maxAngularSpeed, Math.min(cfg.maxAngularSpeed, this.angularVelocity.z));
 
-    const angSpeed = this.angularVelocity.length();
-    if (angSpeed > cfg.maxAngularSpeed) {
-      this.angularVelocity.multiplyScalar(cfg.maxAngularSpeed / angSpeed);
-    }
-
-    const angDelta = this.angularVelocity.clone().multiplyScalar(dt);
-    const pitchQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), angDelta.x);
-    const yawQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), angDelta.y);
-    const rollQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), angDelta.z);
+    // Apply rotation: mouse yaw/pitch directly + roll from angular velocity
+    const pitchQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), pitchDirect);
+    const yawQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yawDirect);
+    const rollQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), this.angularVelocity.z * dt);
     const dq = new THREE.Quaternion().multiply(yawQ).multiply(pitchQ).multiply(rollQ);
     this.quaternion.multiply(dq);
     this.quaternion.normalize();

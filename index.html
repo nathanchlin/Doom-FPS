@@ -3,49 +3,81 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>仙侠空战</title>
+  <title>游戏大厅</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { overflow: hidden; background: #000; font-family: 'Courier New', monospace; }
+    body { overflow: hidden; background: #000; font-family: 'Courier New', monospace; color: #fff; }
     #game { width: 100vw; height: 100vh; }
-    #overlay {
+
+    #main-menu {
       position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #0a0a1e 0%, #1a0a2e 50%, #0a1a1e 100%);
+      z-index: 1000;
+    }
+    #main-menu h1 { font-size: 36px; color: #fff; margin-bottom: 8px; letter-spacing: 4px; }
+    #main-menu .subtitle { font-size: 14px; color: #666; margin-bottom: 48px; }
+    .game-cards { display: flex; gap: 32px; }
+    .game-card {
+      width: 280px; padding: 32px 24px; border: 1px solid #333; border-radius: 12px;
+      background: rgba(255,255,255,0.03); cursor: pointer; transition: all 0.3s;
+      text-align: center;
+    }
+    .game-card:hover { border-color: #daa520; background: rgba(218,165,32,0.08); transform: translateY(-4px); }
+    .game-card h2 { font-size: 24px; margin-bottom: 12px; }
+    .game-card p { font-size: 13px; color: #888; line-height: 1.6; }
+    .game-card .tag { display: inline-block; margin-top: 16px; padding: 4px 12px; border-radius: 4px; font-size: 11px; }
+
+    #btn-doom h2 { color: #cc4444; }
+    #btn-doom .tag { background: rgba(204,68,68,0.2); color: #cc4444; border: 1px solid #cc4444; }
+    #btn-xianxia h2 { color: #daa520; }
+    #btn-xianxia .tag { background: rgba(218,165,32,0.2); color: #daa520; border: 1px solid #daa520; }
+
+    #game-overlay {
+      position: fixed; inset: 0; display: none; flex-direction: column;
       align-items: center; justify-content: center;
       background: rgba(0,0,0,0.85); z-index: 500; color: #fff;
     }
-    #overlay h1 { font-size: 48px; color: #daa520; margin-bottom: 8px; letter-spacing: 8px; }
-    #overlay .subtitle { font-size: 16px; color: #888; margin-bottom: 32px; }
-    #overlay .controls {
-      font-size: 13px; color: #aaa; margin-bottom: 24px;
-      display: grid; grid-template-columns: auto auto; gap: 4px 16px;
-    }
-    #overlay .controls span:nth-child(odd) { color: #daa520; text-align: right; }
-    #start {
+    #game-start {
       padding: 14px 48px; font-size: 18px; cursor: pointer;
       background: transparent; color: #daa520; border: 1px solid #daa520;
-      border-radius: 4px; transition: background 0.2s;
+      border-radius: 4px;
     }
-    #start:hover { background: rgba(218,165,32,0.15); }
+    #game-start:hover { background: rgba(218,165,32,0.15); }
+    #back-to-menu {
+      position: fixed; top: 12px; left: 12px; z-index: 600;
+      padding: 6px 16px; font-size: 12px; cursor: pointer;
+      background: rgba(0,0,0,0.6); color: #888; border: 1px solid #444;
+      border-radius: 4px; display: none;
+    }
+    #back-to-menu:hover { color: #fff; border-color: #888; }
   </style>
 </head>
 <body>
   <div id="game"></div>
 
-  <div id="overlay">
-    <h1>仙侠空战</h1>
-    <div class="subtitle">御剑飞行 · 斩妖除魔</div>
-    <div class="controls">
-      <span>W/A/S/D</span><span>前后左右推力</span>
-      <span>Space / Shift</span><span>上升 / 下降</span>
-      <span>Q / E</span><span>翻滚</span>
-      <span>鼠标</span><span>偏航 / 俯仰</span>
-      <span>左键</span><span>灵力射线</span>
-      <span>V</span><span>切换视角</span>
-      <span>Tab</span><span>加力</span>
-      <span>F</span><span>飞剑冲刺</span>
+  <div id="main-menu">
+    <h1>GAME HUB</h1>
+    <div class="subtitle">选择游戏开始</div>
+    <div class="game-cards">
+      <div class="game-card" id="btn-doom">
+        <h2>末日迷宫</h2>
+        <p>第一人称迷宫射击<br/>探索随机迷宫 · 开门战斗<br/>Roguelike 层级推进</p>
+        <span class="tag">DOOM FPS</span>
+      </div>
+      <div class="game-card" id="btn-xianxia">
+        <h2>仙侠空战</h2>
+        <p>6自由度御剑飞行<br/>灵力射线 · 追踪符箓<br/>浮空仙宫 · Boss 对决</p>
+        <span class="tag">AIR COMBAT</span>
+      </div>
     </div>
-    <button id="start">点击开始</button>
   </div>
+
+  <div id="game-overlay">
+    <button id="game-start">点击开始</button>
+  </div>
+
+  <button id="back-to-menu">&larr; 返回菜单</button>
 
   <script type="module" src="/src/main.ts"></script>
 </body>

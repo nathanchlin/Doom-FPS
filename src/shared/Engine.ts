@@ -1,9 +1,18 @@
 import * as THREE from 'three';
-import { CONFIG } from './config';
+
+export interface EngineConfig {
+  fogColor: number;
+  fogDensity: number;
+  fov: number;
+  near: number;
+  far: number;
+  cameraY: number;
+  cameraZ: number;
+}
 
 /**
  * Engine — owns scene, camera, renderer and main loop.
- * Systems (Player, Level, Enemies, Weapon) register update callbacks.
+ * Systems register update callbacks.
  */
 export class Engine {
   readonly scene: THREE.Scene;
@@ -15,20 +24,20 @@ export class Engine {
   private rafId: number | null = null;
   private running = false;
 
-  constructor(container: HTMLElement) {
-    // Scene + fog for moody atmosphere
+  constructor(container: HTMLElement, config: EngineConfig) {
+    // Scene + fog
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(CONFIG.render.fogColor);
-    this.scene.fog = new THREE.FogExp2(CONFIG.render.fogColor, CONFIG.render.fogDensity);
+    this.scene.background = new THREE.Color(config.fogColor);
+    this.scene.fog = new THREE.FogExp2(config.fogColor, config.fogDensity);
 
-    // Camera (FPS)
+    // Camera
     this.camera = new THREE.PerspectiveCamera(
-      CONFIG.render.fov,
+      config.fov,
       window.innerWidth / window.innerHeight,
-      CONFIG.render.near,
-      CONFIG.render.far,
+      config.near,
+      config.far,
     );
-    this.camera.position.set(0, CONFIG.player.startHeight, 8);
+    this.camera.position.set(0, config.cameraY, config.cameraZ);
 
     // Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });

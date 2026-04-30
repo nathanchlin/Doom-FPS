@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { CONFIG } from './config';
-import { Engine } from './Engine';
-import { Input } from './Input';
-import { Sfx } from './Sfx';
+import { Engine, type EngineConfig } from '../shared/Engine';
+import { Input } from '../shared/Input';
+import { Sfx } from '../shared/Sfx';
 import { FlightController } from './player/FlightController';
 import { CameraSystem } from './core/CameraSystem';
 import { Arena } from './world/Arena';
@@ -43,7 +43,16 @@ export class Game {
   private briefingTimer = 0;
 
   constructor(container: HTMLElement) {
-    this.engine = new Engine(container);
+    const engineCfg: EngineConfig = {
+      fogColor: CONFIG.render.fogColor,
+      fogDensity: CONFIG.render.fogDensity,
+      fov: CONFIG.render.fov,
+      near: CONFIG.render.near,
+      far: CONFIG.render.far,
+      cameraY: CONFIG.player.startHeight,
+      cameraZ: 0,
+    };
+    this.engine = new Engine(container, engineCfg);
     this.input = new Input(this.engine.renderer.domElement);
     this.sfx = new Sfx();
     this.hud = new Hud();

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CONFIG } from '../config';
-import type { AABB3D } from '../shared/collision';
-import { resolveSphereVsAABB3Ds } from '../shared/collision';
+import type { AABB3D } from '../../shared/collision';
+import { resolveSphereVsAABB3Ds } from '../../shared/collision';
 
 export interface LevelConfig {
   buildings: number;
