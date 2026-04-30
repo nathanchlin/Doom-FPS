@@ -1,210 +1,211 @@
 /**
- * Global game configuration — tweak these to rebalance.
+ * Global game configuration for XianxiaAirCombat.
+ * All tunable parameters in one place. Hot-reloads via Vite HMR.
  */
-
 export const CONFIG = {
-  // Player
+  // ─── Flight Physics ───
+  flight: {
+    maxThrust: 80,
+    maxSpeed: 120,
+    drag: 0.98,
+    angularThrust: 3.0,
+    maxAngularSpeed: 2.5,
+    angularDrag: 0.92,
+    boostMultiplier: 2.0,
+    boostDuration: 3.0,
+    boostCooldown: 5.0,
+    playerRadius: 0.8,
+    minHeight: -50,
+    maxHeight: 200,
+    heightDragStart: 180,
+    boundaryRadius: 500,
+    boundaryDragWidth: 30,
+  },
+
+  // ─── Camera ───
+  camera: {
+    thirdPersonDistance: 8,
+    thirdPersonHeight: 3,
+    springStiffness: 6.0,
+    springDamping: 4.0,
+    transitionDuration: 0.4,
+    fov: 78,
+    near: 0.1,
+    far: 800,
+  },
+
+  // ─── Spirit (Mana) ───
+  spirit: {
+    maxSpirit: 100,
+    regenRate: 5,
+    beamCost: 3,
+    dashCost: 15,
+  },
+
+  // ─── Weapons ───
+  weapons: {
+    beam: {
+      name: '灵力射线',
+      damage: 25,
+      fireRate: 0.12,
+      maxRange: 150,
+      spiritCost: 3,
+      color: 0x88ccff,
+    },
+    missile: {
+      name: '符箓追踪弹',
+      damage: 45,
+      aoeRadius: 3,
+      fireRate: 0.5,
+      maxInFlight: 4,
+      maxRange: 200,
+      trackDuration: 5,
+      lockAngle: Math.PI / 36,
+      lockTime: 1.0,
+      initialAmmo: 8,
+      color: 0xffcc00,
+    },
+    sword: {
+      name: '飞剑近战',
+      damage: 80,
+      dashDistance: 15,
+      dashDuration: 0.2,
+      cooldown: 2.0,
+      invincibleDuration: 0.3,
+      spiritCost: 15,
+      color: 0x00ffcc,
+    },
+  },
+
+  // ─── Player ───
   player: {
-    height: 1.75,
-    radius: 0.4,
-    moveSpeed: 6.0,
-    sprintSpeed: 10.0,
-    jumpVelocity: 6.2,
-    gravity: 22.0,
     maxHealth: 100,
-    maxAmmo: 30,
-    damageTakenPerHit: 12,
+    startHeight: 80,
   },
 
-  // Weapon
-  weapon: {
-    fireRate: 0.14,
-    damage: 34,
-    recoilKick: 0.05,
-    recoilRecover: 8.0,
-    muzzleFlashDuration: 0.05,
-    maxRange: 80,
-  },
-
-  // Enemy base stats (before type multipliers)
-  enemy: {
-    radius: 0.6,
-    height: 1.9,
-    // Type-specific overrides
+  // ─── Enemies ───
+  enemies: {
     types: {
-      standard: {
-        health: 100,
-        moveSpeed: 2.8,
-        attackCooldown: 1.2,
-        attackChance: 0.7,
-        attackDamage: 12,
-        engageDistance: 20,
-        stopDistance: 6,
-        color: 0xf0f0f0,
-        scale: 1.0,
+      crow: {
+        name: '灵鸦',
+        hp: 30,
+        speed: 25,
+        attackDamage: 10,
+        attackType: 'fireball' as const,
+        color: 0x222222,
+        scale: 0.5,
+        groupSize: { min: 3, max: 5 },
       },
-      rusher: {
-        health: 50,
-        moveSpeed: 5.5,
-        contactDamage: 15,
-        contactCooldown: 1.0,
-        engageDistance: 20,
-        color: 0xcc3333,
-        scale: 0.6,
-      },
-      tank: {
-        health: 250,
-        moveSpeed: 1.8,
-        attackCooldown: 1.2,
-        attackChance: 0.8,
-        attackDamage: 20,
-        engageDistance: 25,
-        stopDistance: 6,
-        color: 0x666666,
+      serpent: {
+        name: '岩蟒',
+        hp: 120,
+        speed: 15,
+        attackDamage: 25,
+        attackType: 'breath' as const,
+        breathAngle: Math.PI / 6,
+        color: 0x886644,
         scale: 1.5,
       },
-      patrol: {
-        health: 300,
-        moveSpeed: 2.2,
-        attackCooldown: 1.5,
-        attackChance: 0.6,
-        attackDamage: 10,
-        engageDistance: 15,
-        stopDistance: 5,
-        color: 0x664488,
-        scale: 0.85,
+      dragon: {
+        name: '蛟龙',
+        hp: 300,
+        speed: 40,
+        attackDamage: 35,
+        chargeDamage: 50,
+        attackType: 'dragonbreath' as const,
+        color: 0x2244aa,
+        scale: 2.5,
       },
     },
-    // Per-floor scaling
     scaling: {
-      hpPerFloor: 0.1,      // base × (1 + 0.1 × floor)
-      damagePerFloor: 0.08,  // base × (1 + 0.08 × floor)
+      hpPerLevel: 0.15,
+      damagePerLevel: 0.10,
+      speedPerLevel: 0.03,
     },
+    engageDistance: 80,
+    fleeHpPercent: 0.2,
+    avoidDistance: 15,
   },
 
-  // Maze generation
-  maze: {
-    cellSize: 6,           // meters per cell
-    wallThickness: 0.5,
-    baseGridSize: 8,       // floor 1 = 8×8
-    maxGridSize: 14,        // cap
-    minDeadEnds: 3,        // regenerate if fewer
+  // ─── Boss ───
+  boss: {
+    baseHp: 800,
+    phase1Threshold: 0.6,
+    phase2Threshold: 0.3,
+    phase2SpeedBoost: 1.5,
+    phase3SpeedBoost: 1.3,
+    summonCount: 2,
+    shieldHp: 200,
+    color: 0xcc00ff,
   },
 
-  // Doors
-  door: {
-    baseDoorCount: 5,
-    maxDoorCount: 8,
-    interactDistance: 2.0,
-    // Probabilities (before exit assignment)
-    combatChance: 0.765,   // 65 / (65+20) for non-exit doors
-    treasureChance: 0.235, // 20 / (65+20)
-    width: 1.4,
-    height: 3.0,
-    frameColor: 0x333333,
-    glowColor: 0x88aaff,
-    usedColor: 0x999999,
-    exitGlowColor: 0x44ff88,
+  // ─── Arena ───
+  arena: {
+    levelConfigs: [
+      { buildings: 8, bridges: 3, islands: 5, spread: 200, skyTint: '#0a0a3e' },
+      { buildings: 12, bridges: 5, islands: 8, spread: 300, skyTint: '#1a0a2e' },
+      { buildings: 15, bridges: 6, islands: 10, spread: 400, skyTint: '#2a1a1e' },
+    ] as Array<{ buildings: number; bridges: number; islands: number; spread: number; skyTint: string }>,
+    skyTintPresets: ['#0a0a3e', '#1a0a2e', '#2a1a1e', '#0a1a2e'],
+    buildingMinGap: 20,
+    heightRange: [30, 120] as [number, number],
+    islandRadius: [1, 3] as [number, number],
+    buildingsPerLevel: 2,
+    spreadPerLevel: 30,
+    bodyColor: 0xf0f0f0,
+    accentColor: 0xdaa520,
+    fogDensity: 0.008,
+    cloudHeight: 0,
   },
 
-  // Rooms
-  room: {
-    size: 12,              // 12×12 meters
-    wallHeight: 4.5,
-    coverCount: { min: 1, max: 2 },  // low walls in combat rooms
-    coverHeight: 1.5,
-    // Enemy count per floor tier
-    enemyCount: {
-      tier1: { min: 2, max: 3 },   // floor 1-2
-      tier2: { min: 3, max: 4 },   // floor 3-4
-      tier3: { min: 3, max: 5 },   // floor 5+
+  // ─── Pickups ───
+  pickups: {
+    spiritOrb: { color: 0x4488ff, value: 30 },
+    healthPill: { color: 0x44ff88, value: 25 },
+    missileBox: { color: 0xffcc00, value: 2 },
+  },
+
+  // ─── Progression ───
+  progression: {
+    totalLevels: 12,
+    bossLevels: [3, 6, 9, 12],
+    wavesPerLevel: 3,
+    waveRestTime: 5,
+    scaling: {
+      hpPerLevel: 1.15,
+      damagePerLevel: 1.10,
+      enemyCountBase: 3,
+      enemyCountPerLevel: 0.5,
+      speedPerLevel: 1.03,
     },
-    tankUnlockFloor: 3,
-    maxTanksTier2: 1,
-    maxTanksTier3: 2,
+    arenaScaling: {
+      buildingsPerLevel: 2,
+      spreadPerLevel: 30,
+    },
+    unlocks: [
+      { level: 3, type: 'weapon', id: 'missile' },
+      { level: 6, type: 'upgrade', id: 'missile_dual_lock' },
+      { level: 9, type: 'upgrade', id: 'beam_pierce' },
+      { level: 12, type: 'upgrade', id: 'sword_enhanced' },
+    ] as Array<{ level: number; type: string; id: string }>,
   },
 
-  // Chest
-  chest: {
-    ammoChance: 0.7,
-    ammoMin: 10,
-    ammoMax: 20,
-    healthChance: 0.5,
-    healthMin: 20,
-    healthMax: 40,
-    color: 0xdaa520,         // gold
-    emissiveColor: 0xdaa520,
-    emissiveIntensity: 0.8,
-  },
-
-  // World
-  world: {
-    wallHeight: 4.5,
-  },
-
-  // Rendering
+  // ─── Rendering ───
   render: {
     fov: 78,
-    near: 0.05,
-    far: 200,
-    fogDensity: 0.004,
+    near: 0.1,
+    far: 800,
+    fogColor: 0x0a0a2e,
+    fogDensity: 0.003,
+    ambientColor: 0x8888cc,
+    ambientIntensity: 0.6,
+    moonColor: 0xffffff,
+    moonIntensity: 1.2,
   },
 
-  // Transition
-  transition: {
-    fadeDuration: 0.3,     // seconds
-    floorDisplayDuration: 1.5,
-  },
-
-  // Cards
-  cards: {
-    stat: {
-      healthBoost: 25,
-      ammoExpand: 10,
-      speedUp: 1.0,
-      sprintUp: 1.5,
-      damageMultiplier: 1.15,
-    },
-    special: {
-      shieldHits: 3,
-    },
-  },
-
-  // Floor hazards
-  hazard: {
-    damage: 15,        // HP per second
-    size: 3,           // 3m × 3m
-    baseCount: 3,      // floor 1 count
-    maxCount: 12,
-    color: 0xdd0000,
-    emissiveColor: 0xaa0000,
-    emissiveIntensity: 0.8,
-  },
-
-  // Colors
-  colors: {
-    floor: 0xf5f5f5,
-    wall: 0xe8e8e8,
-    wallAccent: 0xdddddd,
-    ceiling: 0xfafafa,
-    player: 0x4ade80,
-    enemy: 0xf0f0f0,
-    enemyDead: 0xcccccc,
-    bullet: 0xff6600,
-    muzzleFlash: 0xffcc55,
-    light1: 0xffffff,
-    light2: 0xffffff,
-    fog: 0xf0f0f0,
-    pickupAmmo: 0xf59e0b,
-    pickupHealth: 0x4ade80,
-  },
-
-  // Touch controls (mobile)
-  touch: {
-    moveDeadzone: 15,        // Movement joystick deadzone (px)
-    lookSensitivity: 1.2,    // Look sensitivity (touch)
-    jumpSwipeThreshold: 80,  // Swipe-up jump threshold (px)
-    joystickRadius: 50,      // Joystick visual radius (px)
-    buttonSize: 48,          // Action button size (px)
+  // ─── HUD ───
+  hud: {
+    radarRadius: 200,
+    radarSize: 150,
   },
 } as const;

@@ -18,8 +18,8 @@ export class Engine {
   constructor(container: HTMLElement) {
     // Scene + fog for moody atmosphere
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(CONFIG.colors.fog);
-    this.scene.fog = new THREE.FogExp2(CONFIG.colors.fog, CONFIG.render.fogDensity);
+    this.scene.background = new THREE.Color(CONFIG.render.fogColor);
+    this.scene.fog = new THREE.FogExp2(CONFIG.render.fogColor, CONFIG.render.fogDensity);
 
     // Camera (FPS)
     this.camera = new THREE.PerspectiveCamera(
@@ -28,7 +28,7 @@ export class Engine {
       CONFIG.render.near,
       CONFIG.render.far,
     );
-    this.camera.position.set(0, CONFIG.player.height, 8);
+    this.camera.position.set(0, CONFIG.player.startHeight, 8);
 
     // Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
