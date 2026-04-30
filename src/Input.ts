@@ -19,7 +19,6 @@ export class Input {
   private virtualMouseDY = 0;
   private lockedOverride = false;
   private touchFiring = false;
-  private touchControls: import('./TouchControls').TouchControls | null = null;
 
   constructor(private readonly canvas: HTMLElement) {
     window.addEventListener('keydown', this.handleKeyDown);
@@ -103,10 +102,7 @@ export class Input {
     this.touchFiring = value;
   }
 
-  /** Register TouchControls for cleanup. */
-  setTouchControls(tc: import('./TouchControls').TouchControls): void {
-    this.touchControls = tc;
-  }
+
 
   /** Trigger a single fire event (used by touch fire start). */
   fireOnce(): void {
@@ -153,9 +149,5 @@ export class Input {
     document.removeEventListener('mousedown', this.handleMouseDown);
     document.removeEventListener('mouseup', this.handleMouseUp);
     document.removeEventListener('pointerlockchange', this.handlePointerLockChange);
-    if (this.touchControls) {
-      this.touchControls.dispose();
-      this.touchControls = null;
-    }
   }
 }
