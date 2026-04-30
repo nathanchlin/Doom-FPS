@@ -162,3 +162,58 @@ export function lookDirection(yaw: number, pitch: number): { dx: number; dy: num
     dz: -Math.cos(yaw) * cosPitch,
   };
 }
+
+/**
+ * Resolve a sphere against a list of 3D AABBs.
+ * Pushes the sphere center out of any penetrating box, with bounce elasticity.
+ */
+export function resolveSphereVsAABB3Ds(
+  x: number, y: number, z: number,
+  radius: number,
+  boxes: AABB3D[],
+  elasticity = 0.3,
+): { x: number; y: number; z: number; vx: number; vy: number; vz: number } {
+  let rx = x, ry = y, rz = z;
+  let bounceVx = 0, bounceVy = 0, bounceVz = 0;
+
+  for (const b of boxes) {
+    const cx = Math.max(b.minX, Math.min(rx, b.maxX));
+    const cy = Math.max(b.minY, Math.min(ry, b.maxY));
+    const cz = Math.max(b.minZ, Math.min(rz, b.maxZ));
+
+    const dx = rx - cx;
+    const dy = ry - cy;
+    const dz = rz - cz;
+    const distSq = dx * dx + dy * dy + dz * dz;
+
+    if (distSq < radius * radius && distSq > 0) {
+      const dist = Math.sqrt(distSq);
+      const push = radius - dist;
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const nz = dz / dist;
+      rx += nx * push;
+      ry += ny * push;
+      rz += nz * push;
+      bounceVx += nx * elasticity;
+      bounceVy += ny * elasticity;
+      bounceVz += nz * elasticity;
+    } else if (distSq === 0) {
+      const exits = [
+        { axis: 'x' as const, sign: -1, d: rx - b.minX },
+        { axis: 'x' as const, sign: 1, d: b.maxX - rx },
+        { axis: 'y' as const, sign: -1, d: ry - b.minY },
+        { axis: 'y' as const, sign: 1, d: b.maxY - ry },
+        { axis: 'z' as const, sign: -1, d: rz - b.minZ },
+        { axis: 'z' as const, sign: 1, d: b.maxZ - rz },
+      ];
+      exits.sort((a, b_) => a.d - b_.d);
+      const e = exits[0]!;
+      if (e.axis === 'x') { rx += e.sign * (e.d + radius); bounceVx += e.sign * elasticity; }
+      else if (e.axis === 'y') { ry += e.sign * (e.d + radius); bounceVy += e.sign * elasticity; }
+      else { rz += e.sign * (e.d + radius); bounceVz += e.sign * elasticity; }
+    }
+  }
+
+  return { x: rx, y: ry, z: rz, vx: bounceVx, vy: bounceVy, vz: bounceVz };
+}
