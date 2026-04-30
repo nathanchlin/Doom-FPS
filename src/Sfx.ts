@@ -84,6 +84,51 @@ export class Sfx {
     this.sweep(400, 1200, 0.3, 'triangle', 0.3);
   }
 
+  spiritBeam(): void {
+    if (!this.ready()) return;
+    this.sweep(2000, 800, 0.08, 'sawtooth', 0.5);
+    this.beep(1500, 0.04, 'sine', 0.3);
+  }
+
+  missileLaunch(): void {
+    if (!this.ready()) return;
+    this.sweep(100, 400, 0.3, 'square', 0.6);
+    this.beep(200, 0.1, 'sine', 0.4);
+  }
+
+  missileExplode(): void {
+    if (!this.ready()) return;
+    this.noise(0.3, 600, 1.0);
+    this.sweep(200, 40, 0.4, 'sawtooth', 0.8);
+  }
+
+  swordDash(): void {
+    if (!this.ready()) return;
+    this.sweep(300, 2000, 0.15, 'sawtooth', 0.7);
+    this.beep(1000, 0.05, 'sine', 0.4);
+  }
+
+  bossPhaseChange(): void {
+    if (!this.ready()) return;
+    this.sweep(80, 40, 1.0, 'sawtooth', 0.9);
+    this.noise(0.5, 200, 0.6);
+    this.beep(220, 0.5, 'triangle', 0.4);
+  }
+
+  boost(): void {
+    if (!this.ready()) return;
+    this.sweep(60, 120, 0.3, 'sawtooth', 0.5);
+    this.beep(80, 0.2, 'square', 0.3);
+  }
+
+  levelComplete(): void {
+    if (!this.ready()) return;
+    this.beep(440, 0.15, 'sine', 0.5);
+    this.beep(660, 0.15, 'sine', 0.5);
+    this.beep(880, 0.2, 'sine', 0.5);
+    this.sweep(440, 880, 0.5, 'triangle', 0.4);
+  }
+
   // --- primitives --------------------------------------------------------
 
   private beep(freq: number, duration: number, type: OscType, vol = 1): void {
