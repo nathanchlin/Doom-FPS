@@ -10,6 +10,8 @@ import { WeaponSystem } from './player/WeaponSystem';
 import { Enemy } from './enemy/Enemy';
 import { Boss } from './enemy/Boss';
 import { Hud } from './ui/Hud';
+import { PlayerModel } from './player/PlayerModel';
+import { Pickup } from './world/Pickup';
 import type { EnemyTypeName } from './enemy/enemy-types';
 import type { WeaponHitResult } from './player/WeaponSystem';
 
@@ -26,9 +28,10 @@ export class Game {
 
   private state: GameState = 'menu';
   private arena!: Arena;
+  private playerModel!: PlayerModel;
   private enemies: Enemy[] = [];
   private boss: Boss | null = null;
-  private pickups: { position: THREE.Vector3 }[] = [];
+  private pickups: Pickup[] = [];
 
   private level = 1;
   private wave = 0;
@@ -127,6 +130,10 @@ export class Game {
     this.wave = 0;
     this.restTimer = 0;
 
+    // Dispose old pickups
+    for (const p of this.pickups) p.dispose(this.engine.scene);
+    this.pickups = [];
+
     // Dispose old arena
     if (this.arena) this.arena.dispose(this.engine.scene);
     this.clearEnemies();
@@ -134,14 +141,16 @@ export class Game {
     // Create new arena
     this.arena = new Arena(this.engine.scene, level);
 
+    // Create player model (once)
+    if (!this.playerModel) {
+      this.playerModel = new PlayerModel(this.engine.scene);
+    }
+
     // Reset player
     this.flight.hp = CONFIG.player.maxHealth;
     this.flight.spirit = CONFIG.spirit.maxSpirit;
     this.flight.alive = true;
     this.flight.teleportTo(0, CONFIG.player.startHeight, 0);
-
-    // Pickup placeholders from arena spots
-    this.pickups = this.arena.pickupSpots.map((pos) => ({ position: pos.clone() }));
 
     // HUD updates
     this.hud.setLevel(level);
@@ -151,6 +160,13 @@ export class Game {
 
     // Start first wave
     this.nextWave();
+
+    // Spawn pickups from arena spots
+    const pickupTypes: Array<import('./world/Pickup').PickupType> = ['spirit', 'health', 'missile'];
+    this.pickups = this.arena.pickupSpots.map((pos, i) => {
+      const type = pickupTypes[i % pickupTypes.length]!;
+      return new Pickup(type, pos, this.engine.scene);
+    });
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -271,6 +287,9 @@ export class Game {
 
     // 3. Camera
     this.cameraSystem.update(dt, this.flight);
+
+    // 3.5 Player model (third-person visible mesh)
+    if (this.playerModel) this.playerModel.update(this.flight, this.cameraSystem);
 
     // 4. Weapon system
     this.weaponSystem.update(dt);
@@ -516,6 +535,7 @@ export class Game {
   dispose(): void {
     this.clearEnemies();
     if (this.arena) this.arena.dispose(this.engine.scene);
+    this.playerModel?.dispose();
     this.hud.dispose();
     this.flight.dispose();
     this.cameraSystem.dispose();
