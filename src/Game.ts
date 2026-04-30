@@ -11,7 +11,7 @@ import { Enemy } from './enemy/Enemy';
 import { Boss } from './enemy/Boss';
 import { Hud } from './ui/Hud';
 import { PlayerModel } from './player/PlayerModel';
-import { Pickup } from './world/Pickup';
+import { Pickup, type PickupType } from './world/Pickup';
 import type { EnemyTypeName } from './enemy/enemy-types';
 import type { WeaponHitResult } from './player/WeaponSystem';
 
@@ -162,11 +162,7 @@ export class Game {
     this.nextWave();
 
     // Spawn pickups from arena spots
-    const pickupTypes: Array<import('./world/Pickup').PickupType> = ['spirit', 'health', 'missile'];
-    this.pickups = this.arena.pickupSpots.map((pos, i) => {
-      const type = pickupTypes[i % pickupTypes.length]!;
-      return new Pickup(type, pos, this.engine.scene);
-    });
+    this.spawnPickups();
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -255,6 +251,17 @@ export class Game {
     }
   }
 
+  private spawnPickups(): void {
+    for (const p of this.pickups) p.dispose(this.engine.scene);
+    this.pickups = [];
+    const spots = this.arena.pickupSpots.slice(0, 10);
+    const types: PickupType[] = ['spirit', 'health', 'missile'];
+    for (let i = 0; i < spots.length; i++) {
+      const type = types[i % types.length]!;
+      this.pickups.push(new Pickup(type, spots[i]!, this.engine.scene));
+    }
+  }
+
   /* ═══════════════════════════════════════════════════════════════════
      MAIN UPDATE LOOP
      ═══════════════════════════════════════════════════════════════════ */
@@ -312,7 +319,19 @@ export class Game {
       }
     }
 
-    // 7. Missile hit detection
+    // 7. Pickup collection
+    for (const pickup of this.pickups) {
+      pickup.update(dt);
+      if (pickup.checkCollect(this.flight.position, CONFIG.flight.playerRadius)) {
+        const loot = pickup.collect();
+        if (loot.health > 0) this.flight.hp = Math.min(CONFIG.player.maxHealth, this.flight.hp + loot.health);
+        if (loot.spirit > 0) this.flight.spirit = Math.min(CONFIG.spirit.maxSpirit, this.flight.spirit + loot.spirit);
+        if (loot.missiles > 0) this.weaponSystem.addMissileAmmo(loot.missiles);
+        this.sfx.chestOpen();
+      }
+    }
+
+    // 8. Missile hit detection
     for (let mi = this.weaponSystem.missiles.length - 1; mi >= 0; mi--) {
       const missile = this.weaponSystem.missiles[mi]!;
       if (missile.expired) continue;
@@ -342,7 +361,7 @@ export class Game {
       }
     }
 
-    // 8. Wave progression — check if all enemies dead
+    // 9. Wave progression — check if all enemies dead
     const aliveEnemies = this.enemies.filter((e) => e.alive).length;
     const bossAlive = this.boss ? this.boss.alive : false;
 
@@ -355,7 +374,7 @@ export class Game {
       }
     }
 
-    // 9. Rest timer countdown
+    // 10. Rest timer countdown
     if (this.restTimer > 0) {
       this.restTimer -= dt;
       if (this.restTimer <= 0) {
@@ -364,10 +383,10 @@ export class Game {
       }
     }
 
-    // 10. Update weapon targets (alive enemies + boss)
+    // 11. Update weapon targets (alive enemies + boss)
     this.updateWeaponTargets();
 
-    // 11. Update HUD
+    // 12. Update HUD
     this.updateHud();
   }
 
@@ -534,6 +553,7 @@ export class Game {
 
   dispose(): void {
     this.clearEnemies();
+    for (const p of this.pickups) p.dispose(this.engine.scene);
     if (this.arena) this.arena.dispose(this.engine.scene);
     this.playerModel?.dispose();
     this.hud.dispose();
